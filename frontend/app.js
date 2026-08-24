@@ -1,1361 +1,677 @@
-// Collect runtime errors so they can be inspected after page load
-window.__startupErrors = [];
-window.addEventListener && window.addEventListener('error', (e) => {
-  try { window.__startupErrors.push({ message: e.message, filename: e.filename, lineno: e.lineno, colno: e.colno, stack: e.error && e.error.stack }); } catch (err) { /* ignore */ }
-});
-window.addEventListener && window.addEventListener('unhandledrejection', (ev) => {
-  try { window.__startupErrors.push({ type: 'unhandledrejection', reason: (ev.reason && (ev.reason.message || ev.reason.stack)) || String(ev.reason) }); } catch (err) { /* ignore */ }
-});
-
-// Duplicate login fallback removed. The primary login form handler defined later in this file will handle submit events.
-const sidebar = document.getElementById('sidebar');
-const menuToggle = document.getElementById('menuToggle');
-const pageTitle = document.getElementById('pageTitle');
-const toast = document.getElementById('toast');
-const focusSearch = document.getElementById('focusSearch');
-const assistantPanel = document.getElementById('assistantPanel');
-const assistantForm = document.getElementById('assistantForm');
-const assistantQuestion = document.getElementById('assistantQuestion');
-const assistantAnswer = document.getElementById('assistantAnswer');
-const dashboardOpportunities = document.getElementById('dashboardOpportunities');
-const dashboardGapRows = document.getElementById('dashboardGapRows');
-const loginScreen = document.getElementById('loginScreen');
-const loginForm = document.getElementById('loginForm');
-const loginError = document.getElementById('loginError');
-const showPassword = document.getElementById('showPassword');
-const appShell = document.querySelector('.app-shell');
-const notificationButton = document.getElementById('notificationButton');
-const notificationPanel = document.getElementById('notificationPanel');
-const notificationList = document.getElementById('notificationList');
-const searchPanel = document.getElementById('searchPanel');
-const globalSearch = document.getElementById('globalSearch');
-const searchResults = document.getElementById('searchResults');
-const goalPanel = document.getElementById('goalPanel');
-const goalOptions = document.getElementById('goalOptions');
-const rolePanel = document.getElementById('rolePanel');
-const addApplicationPanel = document.getElementById('addApplicationPanel');
-let selectedRole = null;
-const jobsView = document.getElementById('jobsView');
-const dashboardView = document.querySelector('.page-wrap');
-const jobsResults = document.getElementById('jobsResults');
-const applicationsView = document.getElementById('applicationsView');
-const applicationBoard = document.getElementById('applicationBoard');
-const applicationStats = document.getElementById('applicationStats');
-const skillGapView = document.getElementById('skillGapView');
-const gapPlanGrid = document.getElementById('gapPlanGrid');
-const resumeView = document.getElementById('resumeView');
-const resumeItems = document.getElementById('resumeItems');
-const resumeCount = document.getElementById('resumeCount');
-const resumeRing = document.getElementById('resumeRing');
-const resumeProgress = document.getElementById('resumeProgress');
-const interviewView = document.getElementById('interviewView');
-const interviewQuestion = document.getElementById('interviewQuestion');
-const questionCategory = document.getElementById('questionCategory');
-const interviewAnswer = document.getElementById('interviewAnswer');
-const interviewFeedback = document.getElementById('interviewFeedback');
-const learningView = document.getElementById('learningView');
-const learningGrid = document.getElementById('learningGrid');
-const certificationsView = document.getElementById('certificationsView');
-const certificationGrid = document.getElementById('certificationGrid');
-const assessmentView = document.getElementById('assessmentView');
-const assessmentQuestions = document.getElementById('assessmentQuestions');
-const assessmentForm = document.getElementById('assessmentForm');
-const assessmentResult = document.getElementById('assessmentResult');
-const mentorshipView = document.getElementById('mentorshipView');
-const mentorGrid = document.getElementById('mentorGrid');
-const analyticsView = document.getElementById('analyticsView');
-const analyticsBreakdown = document.getElementById('analyticsBreakdown');
-const momentumChart = document.getElementById('momentumChart');
-const analyticsRecommendation = document.getElementById('analyticsRecommendation');
-const skillMapView = document.getElementById('skillMapView');
-const skillNodes = document.getElementById('skillNodes');
-const skillDetail = document.getElementById('skillDetail');
-const projectsView = document.getElementById('projectsView');
-const projectGrid = document.getElementById('projectGrid');
-const settingsView = document.getElementById('settingsView');
-const notificationSettings = document.getElementById('notificationSettings');
-let opportunities = [];
-let savedRoleKeys = new Set();
-let dashboardRequestId = 0;
-let applications = [];
+// SkillBridge AI - Multi-Company Recruitment Platform Client Engine
 
-// New API fetch wrapper that attaches the JWT token when present
-async function apiFetch2(path, options = {}) {
-  const token = localStorage.getItem('skillbridge-session');
-  options = options || {};
-  options.headers = options.headers || {};
-  if (token) options.headers['Authorization'] = 'Bearer ' + token;
-  return fetch(path, options);
-}
+const API_BASE = '/api';
 
-// Helper to attach JWT Authorization header when present
-async function apiFetch(path, options = {}) {
-  const token = localStorage.getItem('skillbridge-session');
-  options = options || {};
-  options.headers = options.headers || {};
-  if (token) options.headers['Authorization'] = 'Bearer ' + token;
-  return fetch(path, options);
-}
+let currentUser = null;
+let currentProfile = null;
+let authToken = localStorage.getItem('sb_token') || null;
 
-async function loadDashboard() {
-  const requestId = ++dashboardRequestId;
-  try {
-    const response = await apiFetch2('/api/student/dashboard');
-    if (!response.ok) throw new Error('Dashboard request failed');
-    const data = await response.json();
-    if (requestId !== dashboardRequestId) return;
-    opportunities = data.opportunities || [];
-    const applicationsResponse = await apiFetch2('/api/applications');
-    const applicationsData = await applicationsResponse.json();
-    savedRoleKeys = new Set(applicationsData.applications.map((item) => `${item.role}::${item.company}`));
-    dashboardOpportunities.innerHTML = opportunities.slice(0, 2).map((job) => `<article class="opportunity-card"><div class="opportunity-icon ${job.type === 'INTERNSHIP' ? 'internship-icon' : 'job-icon'}"><i class="icon ${job.type === 'INTERNSHIP' ? 'icon-graduation-cap' : 'icon-briefcase-business'}"></i></div><div class="opportunity-main"><div class="opportunity-title"><div><span class="type-label">${job.type}</span><h3>${job.title}</h3><p>${job.company} <span class="dot-separator">•</span> ${job.location}</p></div><div class="match-score ${job.type === 'INTERNSHIP' ? 'orange' : ''}"><strong>${job.match}%</strong><span>match</span></div></div><div class="chips">${job.skills.map((skill) => `<span>${skill}</span>`).join('')}</div></div><button class="round-arrow" aria-label="View opportunity" data-view="${job.type === 'INTERNSHIP' ? 'internships' : 'jobs'}"><i class="icon icon-arrow-up-right"></i></button></article>`).join('');
-    const gapResponse = await apiFetch2('/api/skill-gaps');
-    const gapData = await gapResponse.json();
-    dashboardGapRows.innerHTML = gapData.skillGaps.map((gap) => `<div class="gap-row"><div class="gap-title"><span>${gap.name}</span><strong>${gap.progress}%</strong></div><div class="gap-track"><span style="width:${gap.progress}%"></span></div></div>`).join('');
-    const assessmentResponse = await apiFetch2('/api/student/assessments');
-    const assessmentData = await assessmentResponse.json();
-    const assessmentJourneyStatus = document.querySelector('.journey .journey-item:nth-child(5) small');
-    if (assessmentJourneyStatus) assessmentJourneyStatus.textContent = assessmentData.lastResult ? 'Complete' : 'Up next';
-    const projectsResponse = await apiFetch2('/api/projects');
-    const projectsData = await projectsResponse.json();
-    const completedProjects = projectsData.projects.filter((project) => project.status === 'Complete').length;
-    const projectsJourneyStatus = document.querySelector('.journey .journey-item:nth-child(7) small');
-    if (projectsJourneyStatus) projectsJourneyStatus.textContent = `${completedProjects} of 2 complete`;
-    document.querySelector('.profile-mini strong').textContent = data.user.name;
-    document.querySelector('.profile-mini span').textContent = data.user.track;
-    document.querySelector('.hero-row h1').firstChild.textContent = `Good morning, ${data.user.name.split(' ')[0]} `;
-    document.querySelector('.goal-value').textContent = data.goal;
-    document.querySelector('.metric-card.fit .muted').textContent = `For ${data.goal}`;
-    const values = document.querySelectorAll('.metric-card .metric-value');
-    values[0].firstChild.textContent = data.metrics.readiness;
-    document.querySelector('.readiness .progress-track > div').style.width = `${data.metrics.readiness}%`;
-    document.querySelector('.readiness .pill').innerHTML = data.metrics.readiness >= 85 ? '<i class="icon icon-check"></i> Ready to apply' : '<i class="icon icon-circle-alert"></i> Almost ready';
-    values[1].firstChild.textContent = data.metrics.fit;
-    document.querySelector('.fit-bar span').style.width = `${data.metrics.fit}%`;
-    values[2].firstChild.textContent = data.metrics.profile;
-    document.querySelector('.strength .progress-track > div').style.width = `${data.metrics.profile}%`;
-    document.querySelector('.strength .pill').innerHTML = data.metrics.profile >= 96 ? '<i class="icon icon-check"></i> Standout profile' : '<i class="icon icon-check"></i> Strong profile';
-    renderJobs();
-  } catch (error) {
-    console.warn('Using embedded dashboard data:', error.message);
-  }
-}
-
-function showWorkspace() {
-  loginScreen.hidden = true;
-  appShell.classList.add('authenticated');
-  updateUserUI();
-}
-
-function parseJwt(token) {
-  try {
-    const parts = token.split('.');
-    if (parts.length !== 3) return null;
-    const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
-    return payload;
-  } catch (e) { return null; }
-}
-
-function updateUserUI() {
-  const token = localStorage.getItem('skillbridge-session');
-  const payload = token ? parseJwt(token) : null;
-  const isAdmin = payload && payload.role === 'admin';
-  const isIndustry = payload && payload.role === 'industry';
-  // show/hide admin and employer nav
-  const adminNav = document.getElementById('adminNavItem');
-  if (adminNav) adminNav.hidden = !isAdmin;
-  const employerNav = document.getElementById('employerNavItem');
-  if (employerNav) employerNav.hidden = !(isIndustry || isAdmin);
-  // set profile display from token if available
-  const profileNameEl = document.querySelector('.profile-mini strong');
-  const profileTrackEl = document.querySelector('.profile-mini span');
-  if (payload && payload.email) {
-    // attempt to fetch profile to get track and name
-    apiFetch2('/api/dashboard').then(res => res.json()).then(data => {
-      if (data && data.user) {
-        if (profileNameEl) profileNameEl.textContent = data.user.name || payload.email.split('@')[0];
-        if (profileTrackEl) profileTrackEl.textContent = data.user.track || '';
-      }
-    }).catch(() => {
-      if (profileNameEl) profileNameEl.textContent = payload.email.split('@')[0];
-    });
-  }
-}
-
-const emailInput = document.getElementById('loginEmail');
-const passwordInput = document.getElementById('loginPassword');
-const registerForm = document.getElementById('registerForm');
-const registerAccountType = document.getElementById('registerAccountType');
-const registerCompanyName = document.getElementById('registerCompanyName');
-const labelRegisterCompanyName = document.getElementById('labelRegisterCompanyName');
-if (registerAccountType) registerAccountType.addEventListener('change', () => {
-  const v = registerAccountType.value;
-  if (v === 'company') { registerCompanyName.hidden = false; if (labelRegisterCompanyName) labelRegisterCompanyName.hidden = false; }
-  else { registerCompanyName.hidden = true; if (labelRegisterCompanyName) labelRegisterCompanyName.hidden = true; }
-});
-const showRegisterLink = document.getElementById('showRegisterLink');
-const showLoginLink = document.getElementById('showLoginLink');
-const registerName = document.getElementById('registerName');
-const registerEmail = document.getElementById('registerEmail');
-const registerPassword = document.getElementById('registerPassword');
-const registerConfirm = document.getElementById('registerConfirm');
-const registerError = document.getElementById('registerError');
-const showPasswordRegister = document.getElementById('showPasswordRegister');
-
-if (localStorage.getItem('skillbridge-session')) {
-  // If page loaded on a student path, show workspace (authenticated SPA) and reflect that URL
-  if (window.location.pathname && window.location.pathname.startsWith('/student')) {
-    showWorkspace();
-    // ensure SPA internal view is dashboard
-    setView('dashboard', false);
+document.addEventListener('DOMContentLoaded', async () => {
+  if (authToken) {
+    await fetchCurrentUser();
   } else {
-    showWorkspace();
+    showLandingPage();
   }
-} else {
-  // If not authenticated but trying to access /student/*, redirect to '/' (login)
-  if (window.location.pathname && window.location.pathname.startsWith('/student')) {
-    window.location.replace('/');
-  }
-}
-
-if (showRegisterLink) showRegisterLink.addEventListener('click', (e) => {
-  e.preventDefault();
-  loginForm.hidden = true;
-  registerForm.hidden = false;
-  loginError.hidden = true;
-  registerError.hidden = true;
+  setupSidebarNavigation();
 });
 
-if (showLoginLink) showLoginLink.addEventListener('click', (e) => {
-  e.preventDefault();
-  registerForm.hidden = true;
-  loginForm.hidden = false;
-  loginError.hidden = true;
-  registerError.hidden = true;
-});
-
-loginForm.addEventListener('submit', async (event) => {
-  event.preventDefault();
-  loginError.hidden = true;
-
-  const email = emailInput.value.trim();
-  const password = passwordInput.value;
-
-  const emailRegex = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
-  if (!email || !password) {
-    loginError.textContent = 'Please enter your email and password.';
-    loginError.hidden = false;
-    return;
-  }
-  if (!emailRegex.test(email)) {
-    loginError.textContent = 'Please enter a valid email address.';
-    loginError.hidden = false;
-    return;
-  }
-  if (password.length < 6) {
-    loginError.textContent = 'Password must be at least 6 characters.';
-    loginError.hidden = false;
-    return;
-  }
-
-  const submitBtn = loginForm.querySelector('button[type="submit"]');
-  if (submitBtn) submitBtn.disabled = true;
-  const response = await apiFetch2('/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password }) });
-  const data = await response.json().catch(() => ({}));
-  if (!response.ok) { loginError.textContent = data.error || 'Unable to sign in'; loginError.hidden = false; if (submitBtn) submitBtn.disabled = false; return; }
-  localStorage.setItem('skillbridge-session', data.token);
-  if (submitBtn) submitBtn.disabled = false;
-  // Keep user on a student-friendly URL when applicable and open the appropriate SPA view
+async function apiFetch(endpoint, options = {}) {
+  const headers = { 'Content-Type': 'application/json', ...(options.headers || {}) };
+  if (authToken) headers['Authorization'] = `Bearer ${authToken}`;
   try {
-    const role = data && data.user && data.user.role;
-    // first reveal the workspace shell so view updates are visible
-    showWorkspace();
-    if (role === 'student') {
-      try { history.replaceState(null, '', '/student/dashboard'); } catch (e) {}
-      // ensure SPA hash + view are consistent
-      window.location.hash = 'dashboard';
-      setView('dashboard');
-    } else if (role === 'admin') {
-      window.location.hash = 'admin';
-      setView('admin');
-    } else if (role === 'industry') {
-      window.location.hash = 'employer';
-      setView('employer');
-    } else {
-      window.location.hash = 'dashboard';
-      setView('dashboard');
-    }
-  } catch (e) {
-    // fallback visibility
-    showWorkspace();
-  }
-  // ensure login screen is hidden in case showWorkspace wasn't called earlier
-  try { if (loginScreen) loginScreen.hidden = true; } catch (e) {}
-});
-
-showPassword.addEventListener('change', () => { passwordInput.type = showPassword.checked ? 'text' : 'password'; });
-
-showPasswordRegister.addEventListener('change', () => {
-  const show = showPasswordRegister.checked;
-  registerPassword.type = show ? 'text' : 'password';
-  registerConfirm.type = show ? 'text' : 'password';
-});
-
-registerForm.addEventListener('submit', async (event) => {
-  event.preventDefault();
-  registerError.hidden = true;
-
-  const name = registerName.value.trim();
-  const email = registerEmail.value.trim();
-  const password = registerPassword.value;
-  const confirm = registerConfirm.value;
-  const accountType = registerAccountType ? registerAccountType.value : 'student';
-  const companyName = registerCompanyName ? registerCompanyName.value.trim() : null;
-  // new student profile fields
-  const college = document.getElementById('registerCollege') ? document.getElementById('registerCollege').value.trim() : '';
-  const department = document.getElementById('registerDepartment') ? document.getElementById('registerDepartment').value.trim() : '';
-  const year = document.getElementById('registerYear') ? document.getElementById('registerYear').value.trim() : '';
-  const phone = document.getElementById('registerPhone') ? document.getElementById('registerPhone').value.trim() : '';
-
-  if (!name || !email || !password) {
-    registerError.textContent = 'Please enter your name, email and password.';
-    registerError.hidden = false;
-    return;
-  }
-  if (accountType === 'company' && (!companyName || companyName.length < 2)) {
-    registerError.textContent = 'Please enter a valid company name.';
-    registerError.hidden = false;
-    return;
-  }
-  if (password !== confirm) {
-    registerError.textContent = 'Passwords do not match.';
-    registerError.hidden = false;
-    return;
-  }
-
-  try {
-    const payload = { name, email, password, accountType, companyName };
-    // include student profile fields only when creating a student account
-    if ((accountType === 'student' || !accountType)) {
-      payload.college = college || null;
-      payload.department = department || null;
-      payload.year = year || null;
-      payload.phone = phone || null;
-    }
-
-    const response = await fetch('/api/register', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-    const data = await response.json().catch(() => ({}));
-    if (!response.ok) { registerError.textContent = data.error || 'Unable to create account'; registerError.hidden = false; return; }
-    localStorage.setItem('skillbridge-session', data.token);
-    try { if (data.role === 'student' || (data && data.role && data.role === 'student')) { history.replaceState(null, '', '/student/dashboard'); } } catch (e) {}
-    showWorkspace();
+    const res = await fetch(`${API_BASE}${endpoint}`, { ...options, headers });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'API Request Failed');
+    return data;
   } catch (err) {
-    registerError.textContent = 'Registration failed. Please try again.';
-    registerError.hidden = false;
+    console.error('API Error:', err.message);
+    throw err;
   }
-});
-
-// --- Forgot / Reset / Verify UI handlers ---
-const showForgotLink = document.getElementById('showForgotLink');
-const forgotForm = document.getElementById('forgotForm');
-const forgotEmail = document.getElementById('forgotEmail');
-const forgotError = document.getElementById('forgotError');
-const forgotSuccess = document.getElementById('forgotSuccess');
-const showResetLink = document.getElementById('showResetLink');
-const resetForm = document.getElementById('resetForm');
-const resetToken = document.getElementById('resetToken');
-const resetPassword = document.getElementById('resetPassword');
-const resetConfirm = document.getElementById('resetConfirm');
-const resetError = document.getElementById('resetError');
-const resetSuccess = document.getElementById('resetSuccess');
-const verifyForm = document.getElementById('verifyForm');
-const verifyToken = document.getElementById('verifyToken');
-const verifyError = document.getElementById('verifyError');
-const verifySuccess = document.getElementById('verifySuccess');
-const showLoginLinkFromForgot = document.getElementById('showLoginLinkFromForgot');
-const showLoginLinkFromReset = document.getElementById('showLoginLinkFromReset');
-const showLoginLinkFromVerify = document.getElementById('showLoginLinkFromVerify');
-
-function showLoginScreen() {
-  loginForm.hidden = false;
-  registerForm.hidden = true;
-  forgotForm.hidden = true;
-  resetForm.hidden = true;
-  verifyForm.hidden = true;
 }
 
-if (showForgotLink) showForgotLink.addEventListener('click', (e) => { e.preventDefault(); showLoginScreen(); loginForm.hidden = true; forgotForm.hidden = false; forgotError.hidden = true; forgotSuccess.hidden = true; });
-if (showResetLink) showResetLink.addEventListener('click', (e) => { e.preventDefault(); showLoginScreen(); forgotForm.hidden = true; resetForm.hidden = false; resetError.hidden = true; resetSuccess.hidden = true; });
-if (showLoginLinkFromForgot) showLoginLinkFromForgot.addEventListener('click', (e) => { e.preventDefault(); showLoginScreen(); });
-if (showLoginLinkFromReset) showLoginLinkFromReset.addEventListener('click', (e) => { e.preventDefault(); showLoginScreen(); });
-if (showLoginLinkFromVerify) showLoginLinkFromVerify.addEventListener('click', (e) => { e.preventDefault(); showLoginScreen(); });
-
-if (forgotForm) forgotForm.addEventListener('submit', async (e) => {
-  e.preventDefault();
-  forgotError.hidden = true; forgotSuccess.hidden = true;
-  const email = (forgotEmail.value || '').trim();
-  if (!email) { forgotError.textContent = 'Please enter your email'; forgotError.hidden = false; return; }
+async function fetchCurrentUser() {
   try {
-    const resp = await fetch('/api/auth/forgot', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email }) });
-    const data = await resp.json().catch(()=>({}));
-    if (!resp.ok) { forgotError.textContent = data.error || 'Unable to request reset'; forgotError.hidden = false; return; }
-    forgotSuccess.textContent = 'If an account exists, a reset token has been sent to the email address.'; forgotSuccess.hidden = false;
-  } catch (err) { forgotError.textContent = 'Request failed'; forgotError.hidden = false; }
-});
-
-if (resetForm) resetForm.addEventListener('submit', async (e) => {
-  e.preventDefault();
-  resetError.hidden = true; resetSuccess.hidden = true;
-  const token = (resetToken.value || '').trim();
-  const pwd = resetPassword.value || '';
-  const confirm = resetConfirm.value || '';
-  if (!token || !pwd) { resetError.textContent = 'Token and new password are required'; resetError.hidden = false; return; }
-  if (pwd.length < 6) { resetError.textContent = 'Password must be at least 6 characters'; resetError.hidden = false; return; }
-  if (pwd !== confirm) { resetError.textContent = 'Passwords do not match'; resetError.hidden = false; return; }
-  try {
-    const resp = await fetch('/api/auth/reset', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token, password: pwd }) });
-    const data = await resp.json().catch(()=>({}));
-    if (!resp.ok) { resetError.textContent = data.error || 'Unable to reset password'; resetError.hidden = false; return; }
-    resetSuccess.textContent = 'Password updated. Please sign in with your new password.'; resetSuccess.hidden = false;
-    // switch back to login after short delay
-    setTimeout(() => { showLoginScreen(); }, 1800);
-  } catch (err) { resetError.textContent = 'Request failed'; resetError.hidden = false; }
-});
-
-if (verifyForm) verifyForm.addEventListener('submit', async (e) => {
-  e.preventDefault();
-  verifyError.hidden = true; verifySuccess.hidden = true;
-  const token = (verifyToken.value || '').trim();
-  if (!token) { verifyError.textContent = 'Verification token is required'; verifyError.hidden = false; return; }
-  try {
-    const resp = await fetch('/api/auth/verify', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token }) });
-    const data = await resp.json().catch(()=>({}));
-    if (!resp.ok) { verifyError.textContent = data.error || 'Unable to verify email'; verifyError.hidden = false; return; }
-    verifySuccess.textContent = 'Email verified. You can now sign in.'; verifySuccess.hidden = false;
-    setTimeout(() => { showLoginScreen(); }, 1400);
-  } catch (err) { verifyError.textContent = 'Request failed'; verifyError.hidden = false; }
-});
-
-// deep-link support: if the app is opened with #reset?token=... or #verify?token=..., auto-open the correct form
-function handleTokenLinksOnLoad() {
-  try {
-    const hash = window.location.hash || '';
-    let token = null;
-    if (hash.startsWith('#reset')) {
-      const qs = hash.split('?')[1] || '';
-      const params = new URLSearchParams(qs);
-      token = params.get('token');
-      if (token) {
-        showLoginScreen();
-        loginForm.hidden = true;
-        resetForm.hidden = false;
-        resetToken.value = token;
-      }
-    } else if (hash.startsWith('#verify')) {
-      const qs = hash.split('?')[1] || '';
-      const params = new URLSearchParams(qs);
-      token = params.get('token');
-      if (token) {
-        showLoginScreen();
-        loginForm.hidden = true;
-        verifyForm.hidden = false;
-        verifyToken.value = token;
-        // Auto-submit verification when arriving via token link
-        (async function() {
-          verifyError.hidden = true; verifySuccess.hidden = true;
-          try {
-            const resp = await fetch('/api/auth/verify', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token }) });
-            const data = await resp.json().catch(()=>({}));
-            if (!resp.ok) { verifyError.textContent = data.error || 'Unable to verify email'; verifyError.hidden = false; return; }
-            verifySuccess.textContent = 'Email verified. You can now sign in.'; verifySuccess.hidden = false;
-            setTimeout(() => { showLoginScreen(); }, 1400);
-          } catch (err) {
-            verifyError.textContent = 'Request failed'; verifyError.hidden = false;
-          }
-        })();
-      }
-    }
-  } catch (e) { /* ignore */ }
-}
-
-handleTokenLinksOnLoad();
-
-const titles = {
-  dashboard: 'Dashboard', 'skill-map': 'Skill Map', 'skill-gap': 'Skill Gap', jobs: 'Jobs', internships: 'Internships', projects: 'Projects', applications: 'Applications', interviews: 'Interviews', learning: 'Learning', mentorship: 'Mentorship', resume: 'Resume Center', assistant: 'AI Career Assistant', settings: 'Settings', analytics: 'Career Analytics', admin: 'Admin', employer: 'Employer'
-};
-
-function showToast(message) {
-  toast.querySelector('span').textContent = message;
-  toast.classList.add('show');
-  window.clearTimeout(showToast.timeout);
-  showToast.timeout = window.setTimeout(() => toast.classList.remove('show'), 2600);
-}
-
-function setView(view, updateHistory = true) {
-  if (updateHistory && window.location.hash !== `#${view}`) window.location.hash = view;
-  document.querySelectorAll('[data-view]').forEach((item) => {
-    item.classList.toggle('active', item.dataset.view === view && item.classList.contains('nav-item'));
-  });
-  document.querySelectorAll('.mobile-nav a').forEach((item) => item.classList.toggle('active', item.dataset.view === view));
-  pageTitle.textContent = titles[view] || 'Dashboard';
-  searchPanel.classList.remove('open');
-  searchPanel.setAttribute('aria-hidden', 'true');
-  dashboardView.hidden = view === 'jobs' || view === 'internships';
-  jobsView.hidden = view !== 'jobs' && view !== 'internships';
-  applicationsView.hidden = view !== 'applications';
-  skillGapView.hidden = view !== 'skill-gap';
-  resumeView.hidden = view !== 'resume';
-  interviewView.hidden = view !== 'interviews';
-  learningView.hidden = view !== 'learning';
-  certificationsView.hidden = view !== 'certifications';
-  assessmentView.hidden = view !== 'assessment';
-  mentorshipView.hidden = view !== 'mentorship';
-  analyticsView.hidden = view !== 'analytics';
-  skillMapView.hidden = view !== 'skill-map';
-  projectsView.hidden = view !== 'projects';
-  settingsView.hidden = view !== 'settings';
-  if (view === 'jobs' || view === 'internships') {
-    document.getElementById('jobType').value = view === 'internships' ? 'INTERNSHIP' : 'all';
-    renderJobs();
+    const data = await apiFetch('/auth/me');
+    currentUser = data.user;
+    currentProfile = data.profile;
+    showUserWorkspace();
+  } catch (err) {
+    handleLogout();
   }
-  if (view === 'applications') loadApplications();
-  if (view === 'skill-gap') loadSkillGaps();
-  if (view === 'resume') loadResume();
-  if (view === 'interviews') loadInterviewQuestion();
-  if (view === 'learning') loadLearning();
-  if (view === 'certifications') loadCertifications();
-  if (view === 'assessment') loadAssessment();
-  if (view === 'mentorship') loadMentors();
-  if (view === 'analytics') loadAnalytics();
-  if (view === 'skill-map') loadSkillMap();
-  if (view === 'projects') loadProjects();
-  if (view === 'settings') loadSettings();
-  if (view === 'assistant') openAssistant();
-  if (view === 'admin') loadAdmin();
-  if (view === 'employer') loadEmployer();
-  else if (view !== 'dashboard') showToast(`${titles[view] || 'This view'} is ready for your next move.`);
-  sidebar.classList.remove('open');
 }
 
-async function loadAssessment() { const response = await apiFetch2('/api/student/assessments'); const data = await response.json(); assessmentQuestions.innerHTML = data.questions.map((question, index) => `<fieldset class="assessment-question"><legend><span>0${index + 1}</span>${question.prompt}</legend>${question.options.map((option) => `<label><input type="radio" name="question-${question.id}" value="${option}" required><span>${option}</span></label>`).join('')}</fieldset>`).join(''); if (data.lastResult) { assessmentResult.hidden = false; assessmentResult.innerHTML = `<strong>${data.lastResult.score}/100</strong><span>${data.lastResult.correct} of ${data.lastResult.total} correct</span><p>${data.lastResult.recommendation}</p>`; } else assessmentResult.hidden = true; }
-
-async function loadCertifications() { const response = await apiFetch2('/api/certifications'); const data = await response.json(); certificationGrid.innerHTML = data.certifications.map((certification) => `<article class="certification-card"><div class="certification-icon"><i class="icon icon-award"></i></div><span class="type-label">${certification.provider}</span><h2>${certification.name}</h2><p>Supports <strong>${certification.relevance}</strong></p><div class="certification-footer"><span class="certification-status ${certification.status === 'Complete' ? 'complete' : ''}">${certification.status}</span><button class="primary-button certification-action" data-certification-id="${certification.id}" ${certification.status === 'Complete' ? 'disabled' : ''}>${certification.status === 'Complete' ? 'Completed' : 'Mark complete'} <i class="icon ${certification.status === 'Complete' ? 'icon-check' : 'icon-arrow-up-right'}"></i></button></div></article>`).join(''); }
-
-async function loadSettings() {
-  const response = await apiFetch2('/api/settings');
-  const data = await response.json();
-  const profile = data.profile || {};
-  document.getElementById('settingsName').textContent = profile.name || '';
-  document.getElementById('settingsTrack').textContent = profile.track || '';
-  document.getElementById('profileName').value = profile.name || '';
-  document.getElementById('profileTrack').value = profile.track || '';
-  // populate new student/profile fields if present
-  const collegeEl = document.getElementById('profileCollege'); if (collegeEl) collegeEl.value = profile.college || '';
-  const deptEl = document.getElementById('profileDepartment'); if (deptEl) deptEl.value = profile.department || '';
-  const yearEl = document.getElementById('profileYear'); if (yearEl) yearEl.value = profile.year || '';
-  const phoneEl = document.getElementById('profilePhone'); if (phoneEl) phoneEl.value = profile.phone || '';
-  document.getElementById('settingsGoal').textContent = data.goal || '';
-  const labels = { emailUpdates: ['Career updates', 'Get relevant updates about your progress'], weeklyDigest: ['Weekly digest', 'A short summary of your momentum'], opportunityAlerts: ['Opportunity alerts', 'Know when a strong match appears'] };
-  notificationSettings.innerHTML = Object.entries(labels).map(([key, [title, detail]]) => `<label class="setting-row"><span><strong>${title}</strong><small>${detail}</small></span><input type="checkbox" data-setting="${key}" ${data.settings[key] ? 'checked' : ''}><i class="toggle"></i></label>`).join('');
+function showLandingPage() {
+  document.getElementById('guest-nav-links').classList.remove('hidden');
+  document.getElementById('user-nav-controls').classList.add('hidden');
+  document.getElementById('landing-page').classList.remove('hidden');
+  document.getElementById('app-workspace').classList.add('hidden');
 }
 
-async function loadProjects() {
-  const response = await apiFetch2('/api/projects');
-  const data = await response.json();
-  projectGrid.innerHTML = data.projects.map((project) => `<article class="project-card"><div class="project-art ${project.status === 'Complete' ? 'complete' : ''}"><i class="icon ${project.status === 'Complete' ? 'icon-check' : 'icon-code-2'}"></i></div><div class="project-card-body"><div class="project-status ${project.status.toLowerCase().replace(' ', '-')}">${project.status}</div><h2>${project.title}</h2><p>${project.description}</p><div class="chips">${project.skills.map((skill) => `<span>${skill}</span>`).join('')}</div><button class="primary-button project-action" data-project-id="${project.id}" ${project.status === 'Complete' ? 'disabled' : ''}>${project.status === 'Complete' ? 'Completed' : 'Mark complete'} <i class="icon ${project.status === 'Complete' ? 'icon-check' : 'icon-arrow-up-right'}"></i></button></div></article>`).join('');
+function showUserWorkspace() {
+  document.getElementById('guest-nav-links').classList.add('hidden');
+  document.getElementById('user-nav-controls').classList.remove('hidden');
+  document.getElementById('landing-page').classList.add('hidden');
+  document.getElementById('app-workspace').classList.remove('hidden');
+
+  const name = (currentProfile && (currentProfile.company_name || currentProfile.name)) || currentUser.companyName || currentUser.username;
+  document.getElementById('user-display-name').textContent = name;
+  document.getElementById('user-display-role').textContent = currentUser.role === 'company' ? `COMPANY (${currentUser.companyId || 'CMP-10001'})` : currentUser.role.toUpperCase();
+  document.getElementById('user-avatar').textContent = (name[0] || 'A').toUpperCase();
+
+  setupRoleSidebar(currentUser.role);
 }
 
-// Employer UI: create and manage jobs
-async function loadEmployer() {
-  // show employer view and load jobs
-  const employerView = document.getElementById('employerView');
-  if (!employerView) return;
-  employerView.hidden = false;
-  // load jobs for this employer
-  await loadEmployerJobs();
-}
-
-async function loadEmployerJobs() {
-  const resp = await apiFetch2('/api/employer/jobs');
-  if (!resp.ok) { showToast('Unable to load jobs'); return; }
-  const data = await resp.json();
-  const listEl = document.getElementById('employerJobList');
-  if (!listEl) return;
-  const jobs = data.jobs || [];
-  if (jobs.length === 0) { listEl.innerHTML = '<p>No jobs yet. Create one above.</p>'; return; }
-  listEl.innerHTML = jobs.map(j => `<div class="job-item" data-job-id="${j.id}"><h4>${j.title} <small>${j.company}</small></h4><p>${j.description || ''}</p><div class="job-actions"><button class="text-button view-matches">View matches</button></div></div>`).join('');
-}
-
-// Create job form handler
-const createJobForm = document.getElementById('createJobForm');
-if (createJobForm) createJobForm.addEventListener('submit', async (ev) => {
-  ev.preventDefault();
-  const title = document.getElementById('jobTitle').value.trim();
-  const company = document.getElementById('jobCompany').value.trim();
-  const description = document.getElementById('jobDescription').value.trim();
-  const minScore = Number(document.getElementById('jobMinScore').value || 0);
-  if (!title || !company) { showToast('Please enter title and company'); return; }
-  const resp = await apiFetch2('/api/employer/jobs', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ title, company, description, minScore }) });
-  if (!resp.ok) { showToast('Unable to create job'); return; }
-  showToast('Job created');
-  createJobForm.reset();
-  loadEmployerJobs();
-});
-
-// Delegated event handlers for employer job actions
-document.addEventListener('click', async (ev) => {
-  const viewBtn = ev.target.closest && ev.target.closest('.view-matches');
-  if (viewBtn) {
-    const jobEl = viewBtn.closest('.job-item');
-    const jobId = jobEl && jobEl.dataset.jobId;
-    if (!jobId) return;
-    // load matches
-    const resp = await apiFetch2(`/api/employer/jobs/${jobId}/matches`);
-    if (!resp.ok) { showToast('Unable to load matches'); return; }
-    const data = await resp.json();
-    // show matches in a simple modal-like prompt (or expand below)
-    const list = data.matches || [];
-    // render a quick selection UI
-    const html = `<h3>Matches for job</h3><ul>${list.map(c=>`<li><strong>${c.name}</strong> (${c.email}) — score ${c.score} — <button class="text-button send-offer" data-job-id="${jobId}" data-candidate-email="${c.email}">Send Offer</button></li>`).join('')}</ul>`;
-    // place into a temporary panel (use adminModal if present)
-    const modal = document.getElementById('adminModal');
-    if (modal) {
-      modal.hidden = false;
-      document.getElementById('adminModalTitle').textContent = 'Matches';
-      // reuse modal content area to show matches
-      const content = modal.querySelector('.modal-content');
-      if (content) {
-        // keep close button and title; insert a container
-        let container = content.querySelector('.matches-container');
-        if (!container) { container = document.createElement('div'); container.className = 'matches-container'; content.appendChild(container); }
-        container.innerHTML = html;
-      }
-    } else {
-      alert('Matches:\n' + list.map(c=>`${c.name} (${c.email}) — score ${c.score}`).join('\n'));
-    }
-    return;
+function setupRoleSidebar(role) {
+  document.querySelectorAll('.role-sidebar-links').forEach(el => el.classList.add('hidden'));
+  if (role === 'student') {
+    document.getElementById('sidebar-student-links').classList.remove('hidden');
+    navigateTo('student-dashboard');
+  } else if (role === 'company') {
+    document.getElementById('sidebar-company-links').classList.remove('hidden');
+    navigateTo('company-dashboard');
+  } else if (role === 'college') {
+    document.getElementById('sidebar-college-links').classList.remove('hidden');
+    navigateTo('college-dashboard');
   }
+}
 
-  const sendOfferBtn = ev.target.closest && ev.target.closest('.send-offer');
-  if (sendOfferBtn) {
-    const jobId = sendOfferBtn.dataset.jobId;
-    const candidateEmail = sendOfferBtn.dataset.candidateEmail;
-    // open modal to compose offer
-    const modal = document.getElementById('adminModal');
-    if (!modal) return;
-    modal.hidden = false;
-    document.getElementById('adminModalTitle').textContent = `Send offer to ${candidateEmail}`;
-    document.getElementById('adminModalEmail').value = candidateEmail;
-    document.getElementById('adminModalName').value = '';
-    document.getElementById('adminModalPassword').value = '';
-    // store the jobId in a dataset on the form
-    document.getElementById('adminModalForm').dataset.jobId = jobId;
-    return;
-  }
-
-});
-
-// reuse existing adminModalForm submit handler to send offer when password is empty and email field is set
-const adminModalForm = document.getElementById('adminModalForm');
-if (adminModalForm) {
-  adminModalForm.addEventListener('submit', async (ev) => {
-    ev.preventDefault();
-    const email = document.getElementById('adminModalEmail').value;
-    const name = document.getElementById('adminModalName').value.trim();
-    const pwd = document.getElementById('adminModalPassword').value;
-    const jobId = adminModalForm.dataset.jobId;
-    // If password provided, route to password reset (existing behavior)
-    if (pwd && pwd.length >= 6 && !jobId) {
-      const resp = await apiFetch2('/api/admin/user/reset-password', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password: pwd }) });
-      if (resp.ok) { showToast('Password reset'); adminModal.hidden = true; } else { showToast('Unable to reset password'); }
-      return;
-    }
-    // If jobId present, send an offer
-    if (jobId) {
-      const letter = `Dear ${name || email.split('@')[0]},\n\nWe are pleased to offer you the position. Please reply to accept.`;
-      const resp = await apiFetch2(`/api/employer/jobs/${jobId}/offer`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ candidateEmail: email, offerLetter: letter }) });
-      if (resp.ok) { showToast('Offer sent (in-app)'); adminModal.hidden = true; loadEmployerJobs(); } else { showToast('Unable to send offer'); }
-      // clear jobId
-      delete adminModalForm.dataset.jobId;
-      return;
-    }
-    // otherwise update name as profile edit (existing behavior)
-    const resp = await apiFetch2('/api/admin/user/update', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, name }) });
-    if (resp.ok) { showToast('User updated'); adminModal.hidden = true; loadAdminUsers(); } else { showToast('Unable to update user'); }
+function setupSidebarNavigation() {
+  document.querySelectorAll('.sidebar-item').forEach(item => {
+    item.addEventListener('click', (e) => {
+      e.preventDefault();
+      const target = item.getAttribute('data-target');
+      if (target) navigateTo(target);
+    });
   });
 }
 
-// Admin UI: load and render users
-async function loadAdminUsers() {
-  const response = await apiFetch2('/api/admin/users');
-  if (!response.ok) { showToast('Unable to load admin users.'); return; }
-  const data = await response.json();
-  const listEl = document.getElementById('adminUserList');
-  const filter = document.getElementById('adminFilter').value.trim().toLowerCase();
-  const users = (data.users || []).filter(u => `${u.email} ${u.name}`.toLowerCase().includes(filter));
-  if (!listEl) return;
-  if (users.length === 0) { listEl.innerHTML = '<p>No users found.</p>'; return; }
-  listEl.innerHTML = `<table class="admin-table"><thead><tr><th>Email</th><th>Name</th><th>Role</th><th>Actions</th></tr></thead><tbody>${users.map(u => `<tr data-email="${u.email}"><td>${u.email}</td><td>${u.name || ''}</td><td class="role-cell">${u.role || 'user'}</td><td class="actions"><button class="text-button role-toggle">${u.role === 'admin' ? 'Revoke admin' : 'Make admin'}</button> <button class="text-button user-edit">Edit</button> <button class="text-button user-reset">Reset password</button> <button class="destructive-button user-delete">Delete</button></td></tr>`).join('')}</tbody></table>`;
+function navigateTo(viewId) {
+  document.querySelectorAll('.sidebar-item').forEach(el => el.classList.remove('active'));
+  const activeItem = document.querySelector(`.sidebar-item[data-target="${viewId}"]`);
+  if (activeItem) activeItem.classList.add('active');
+
+  document.querySelectorAll('.workspace-view').forEach(view => view.classList.add('hidden'));
+  const targetView = document.getElementById(`view-${viewId}`);
+  if (targetView) targetView.classList.remove('hidden');
+
+  if (viewId === 'student-dashboard') loadStudentDashboard();
+  else if (viewId === 'student-profile') loadStudentProfileView();
+  else if (viewId === 'student-skills') loadStudentSkills();
+  else if (viewId === 'projects') loadStudentProjects();
+  else if (viewId === 'certifications') loadStudentCertifications();
+  else if (viewId === 'ai-skill-score') loadAISkillScoreView();
+  else if (viewId === 'internships') loadStudentOpportunities();
+  else if (viewId === 'student-applications') loadStudentApplications();
+  else if (viewId === 'company-dashboard') loadATSKanbanPipeline();
+  else if (viewId === 'talent-finder') searchCandidates();
+  else if (viewId === 'college-dashboard') loadCollegeAnalytics();
 }
 
-async function loadAdmin() {
-  // default to users panel
-  document.getElementById('adminUsersPanel').hidden = false;
-  document.getElementById('adminDeletedPanel').hidden = true;
-  document.getElementById('adminAuditPanel').hidden = true;
-  await loadAdminUsers();
+// PORTAL AUTH SELECTION & MODAL
+function openRoleAuthModal(role = 'company') {
+  document.getElementById('auth-modal').classList.remove('hidden');
+  selectRoleTab(role);
 }
 
-async function loadAdminDeleted() {
-  const resp = await apiFetch2('/api/admin/deleted');
-  if (!resp.ok) { showToast('Unable to load deleted users'); return; }
-  const data = await resp.json();
-  const listEl = document.getElementById('adminDeletedList');
-  if (!listEl) return;
-  const deleted = data.deleted || [];
-  if (deleted.length === 0) { listEl.innerHTML = '<p>No recently deleted users.</p>'; return; }
-  listEl.innerHTML = `<table class="admin-table"><thead><tr><th>Email</th><th>Deleted At</th><th>By</th><th>Actions</th></tr></thead><tbody>${deleted.map(d => `<tr data-email="${d.email}"><td>${d.email}</td><td>${d.deletedAt}</td><td>${d.actor || ''}</td><td><button class="text-button undo-delete">Undo delete</button></td></tr>`).join('')}</tbody></table>`;
-}
+function selectRoleTab(role) {
+  document.getElementById('login-role-hidden').value = role;
 
-async function loadAdminAudit() {
-  const resp = await apiFetch2('/api/admin/audit');
-  if (!resp.ok) { showToast('Unable to load audit logs'); return; }
-  const data = await resp.json();
-  const listEl = document.getElementById('adminAuditList');
-  if (!listEl) return;
-  const logs = data.audit || [];
-  if (logs.length === 0) { listEl.innerHTML = '<p>No audit logs.</p>'; return; }
-  listEl.innerHTML = `<ol class="audit-list">${logs.map(l => `<li><strong>${l.action}</strong> &middot; ${new Date(l.time).toLocaleString()} &middot; by <em>${l.actor}</em> ${l.target ? `&middot; target: ${l.target}` : ''} <div class="audit-details">${JSON.stringify(l.details)}</div></li>`).join('')}</ol>`;
-}
+  const btnCompany = document.getElementById('tab-btn-company');
+  const btnStudent = document.getElementById('tab-btn-student');
+  const btnCollege = document.getElementById('tab-btn-college');
 
-// Admin: load email queue and SMTP settings
-async function loadAdminEmails() {
-  const qResp = await apiFetch2('/api/admin/email-queue');
-  const offersResp = await apiFetch2('/api/admin/offers');
-  if (!qResp.ok) { showToast('Unable to load email queue'); return; }
-  if (!offersResp.ok) { showToast('Unable to load offers'); return; }
-  const qData = await qResp.json();
-  const offersData = await offersResp.json();
-  const queueEl = document.getElementById('adminEmailQueueList');
-  const offersEl = document.getElementById('adminOffersList');
-  if (queueEl) {
-    const q = qData.queue || [];
-    if (q.length === 0) queueEl.innerHTML = '<p>No pending email jobs.</p>';
-    else queueEl.innerHTML = `<table class="admin-table"><thead><tr><th>Queue ID</th><th>To</th><th>Type</th><th>Attempts</th><th>Next Run</th><th>Actions</th></tr></thead><tbody>${q.map(j => `<tr data-queue-id="${j.id}"><td>${j.id}</td><td>${j.candidateEmail}</td><td>${j.type}</td><td>${j.attempts}/${j.maxAttempts}</td><td>${new Date(j.nextRun).toLocaleString()}</td><td><button class="text-button email-reenqueue" data-queue-id="${j.id}">Re-enqueue</button></td></tr>`).join('')}</tbody></table>`;
-  }
-  if (offersEl) {
-    const all = offersData.offers || [];
-    if (all.length === 0) offersEl.innerHTML = '<p>No offers found.</p>';
-    else offersEl.innerHTML = `<table class="admin-table"><thead><tr><th>Candidate</th><th>Job</th><th>Company</th><th>Sent</th><th>Attempts</th><th>Actions</th></tr></thead><tbody>${all.map(o => `<tr data-offer-id="${o.id}"><td>${o.candidateEmail}</td><td>${o.title}</td><td>${o.company}</td><td>${o.emailSent ? 'Yes' : 'No'}</td><td>${(o.emailAttempts && o.emailAttempts.length) || 0}</td><td><button class="text-button email-reenqueue-offer" data-offer-id="${o.id}">Re-send</button> <button class="text-button view-offer-attempts" data-offer-id="${o.id}">View attempts</button></td></tr>`).join('')}</tbody></table>`;
-  }
-  // populate smtp form
-  await loadAdminSmtp();
-}
+  btnCompany.classList.remove('btn-primary-cyber', 'active');
+  btnStudent.classList.remove('btn-primary-cyber', 'active');
+  btnCollege.classList.remove('btn-primary-cyber', 'active');
 
-// Admin: load invites list and provide re-send action
-async function loadAdminInvites() {
-  const resp = await apiFetch2('/api/admin/invites');
-  if (!resp.ok) { showToast('Unable to load invites'); return; }
-  const data = await resp.json();
-  const el = document.getElementById('adminInvitesList');
-  if (!el) return;
-  const invites = data.invites || [];
-  if (invites.length === 0) { el.innerHTML = '<p>No invites found.</p>'; return; }
-  el.innerHTML = `<table class="admin-table"><thead><tr><th>Invite ID</th><th>Company</th><th>Invitee</th><th>Inviter</th><th>Accepted</th><th>Sent</th><th>Actions</th></tr></thead><tbody>${invites.map(i => `<tr data-invite-id="${i.id}"><td>${i.id}</td><td>${i.companyName}</td><td>${i.inviteeEmail}</td><td>${i.inviterEmail}</td><td>${i.accepted ? 'Yes' : 'No'}</td><td>${i.emailSent ? 'Yes' : 'No'}</td><td><button class="text-button admin-invite-resend" data-invite-id="${i.id}">Re-send</button></td></tr>`).join('')}</tbody></table>`;
-}
+  const compForm = document.getElementById('company-login-form');
+  const genForm = document.getElementById('login-form');
 
-// Add handler for invite re-send (shows confirmation modal first)
-document.addEventListener('click', async (ev) => {
-  const resendBtn = ev.target.closest && ev.target.closest('.admin-invite-resend');
-  if (resendBtn) {
-    const inviteId = resendBtn.dataset.inviteId;
-    if (!inviteId) return;
-    // populate confirm modal
-    const confirmModal = document.getElementById('adminConfirmModal');
-    const confirmMsg = document.getElementById('adminConfirmMessage');
-    const confirmTitle = document.getElementById('adminConfirmTitle');
-    const okBtn = document.getElementById('adminConfirmOk');
-    const cancelBtn = document.getElementById('adminConfirmCancel');
-    const closeBtn = document.getElementById('adminConfirmClose');
-    confirmTitle.textContent = 'Re-send invite?';
-    const row = resendBtn.closest('tr');
-    const emailCell = row ? row.querySelector('td:nth-child(3)') : null;
-    confirmMsg.textContent = `Re-send invite ${inviteId} to ${emailCell ? emailCell.textContent.trim() : ''}?`;
-    confirmModal.hidden = false;
-
-    // attach one-time handlers
-    const cleanup = () => {
-      confirmModal.hidden = true;
-      okBtn.disabled = false; cancelBtn.disabled = false;
-      okBtn.removeEventListener('click', onOk);
-      cancelBtn.removeEventListener('click', onCancel);
-      closeBtn.removeEventListener('click', onCancel);
-    };
-    const onCancel = () => { cleanup(); };
-    const onOk = async () => {
-      okBtn.disabled = true; cancelBtn.disabled = true;
-      try {
-        const resp = await apiFetch2('/api/admin/invites/reenqueue', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ inviteId }) });
-        if (resp.ok) { showToast('Invite re-sent'); await loadAdminInvites(); await loadAdminEmails(); }
-        else { showToast('Unable to re-send invite'); }
-      } catch (e) { showToast('Unable to re-send invite'); }
-      cleanup();
-    };
-    okBtn.addEventListener('click', onOk);
-    cancelBtn.addEventListener('click', onCancel);
-    closeBtn.addEventListener('click', onCancel);
-    return;
-  }
-});
-
-async function loadAdminSmtp() {
-  const resp = await apiFetch2('/api/admin/smtp');
-  if (!resp.ok) return;
-  const data = await resp.json();
-  const s = data.smtp || null;
-  document.getElementById('smtpHost').value = s && s.host ? s.host : '';
-  document.getElementById('smtpPort').value = s && s.port ? s.port : '';
-  document.getElementById('smtpUser').value = s && s.user ? s.user : '';
-  document.getElementById('smtpPass').value = '';
-  document.getElementById('smtpFrom').value = s && s.from ? s.from : '';
-  document.getElementById('smtpRetries').value = s && s.retries ? s.retries : '';
-  document.getElementById('smtpRetryDelay').value = s && s.retryDelayMs ? s.retryDelayMs : '';
-}
-
-// Admin event handlers (delegated)
-document.addEventListener('click', async (ev) => {
-  const tabBtn = ev.target.closest && ev.target.closest('.tab-button');
-  if (tabBtn) {
-    const tab = tabBtn.dataset.adminTab;
-    document.querySelectorAll('#adminView .admin-panel').forEach(p => p.hidden = true);
-    document.querySelectorAll('#adminView .tab-button').forEach(b => b.classList.remove('active'));
-    tabBtn.classList.add('active');
-    if (tab === 'users') { document.getElementById('adminUsersPanel').hidden = false; await loadAdminUsers(); }
-    else if (tab === 'deleted') { document.getElementById('adminDeletedPanel').hidden = false; await loadAdminDeleted(); }
-    else if (tab === 'audit') { document.getElementById('adminAuditPanel').hidden = false; await loadAdminAudit(); }
-    else if (tab === 'emails') { document.getElementById('adminEmailsPanel').hidden = false; await loadAdminEmails(); }
-    return;
-  }
-
-  const roleBtn = ev.target.closest && ev.target.closest('.role-toggle');
-  if (roleBtn) {
-    const row = roleBtn.closest('tr');
-    const email = row && row.dataset.email;
-    const currentRole = row.querySelector('.role-cell').textContent.trim();
-    const newRole = currentRole === 'admin' ? 'user' : 'admin';
-    roleBtn.disabled = true;
-    const resp = await apiFetch2('/api/admin/user/role', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, role: newRole }) });
-    if (resp.ok) { showToast('Role updated'); loadAdminUsers(); } else { showToast('Unable to update role'); }
-    roleBtn.disabled = false;
-    return;
-  }
-  const reenqueueBtn = ev.target.closest && ev.target.closest('.email-reenqueue');
-  if (reenqueueBtn) {
-    const queueId = reenqueueBtn.dataset.queueId;
-    if (!queueId) return;
-    reenqueueBtn.disabled = true;
-    // find offerId by looking up job in visual row, but easiest is to call admin endpoint to reenqueue by offerId — our UI doesn't have offerId mapping here, so call a server reenqueue using queue id is not implemented; instead instruct admin to use 'Re-send' on offer row which calls offer-based reenqueue
-    showToast('Use Re-send on Offers table to requeue by offer ID');
-    reenqueueBtn.disabled = false;
-    return;
-  }
-  const reSendOfferBtn = ev.target.closest && ev.target.closest('.email-reenqueue-offer');
-  if (reSendOfferBtn) {
-    const offerId = Number(reSendOfferBtn.dataset.offerId);
-    if (!offerId) return;
-    reSendOfferBtn.disabled = true;
-    const resp = await apiFetch2('/api/admin/email-queue/reenqueue', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ offerId }) });
-    if (resp.ok) { showToast('Offer requeued'); loadAdminEmails(); } else { showToast('Unable to requeue'); }
-    reSendOfferBtn.disabled = false;
-    return;
-  }
-  const viewAttemptsBtn = ev.target.closest && ev.target.closest('.view-offer-attempts');
-  if (viewAttemptsBtn) {
-    const offerId = Number(viewAttemptsBtn.dataset.offerId);
-    if (!offerId) return;
-    viewAttemptsBtn.disabled = true;
-    // toggle inline attempts row if already present
-    const row = viewAttemptsBtn.closest('tr');
-    if (!row) { viewAttemptsBtn.disabled = false; return; }
-    const next = row.nextElementSibling;
-    if (next && next.classList && next.classList.contains('attempts-row') && Number(next.dataset.offerId) === offerId) {
-      next.remove();
-      viewAttemptsBtn.disabled = false;
-      return;
+  if (role === 'company') {
+    btnCompany.classList.add('btn-primary-cyber', 'active');
+    compForm.classList.remove('hidden');
+    genForm.classList.add('hidden');
+  } else {
+    genForm.classList.remove('hidden');
+    compForm.classList.add('hidden');
+    if (role === 'student') {
+      btnStudent.classList.add('btn-primary-cyber', 'active');
+      document.getElementById('login-identity').value = 'arjun_sharma';
+      document.getElementById('login-password').value = 'Student@123';
+    } else if (role === 'college') {
+      btnCollege.classList.add('btn-primary-cyber', 'active');
+      document.getElementById('login-identity').value = 'anna_univ_admin';
+      document.getElementById('login-password').value = 'College@123';
     }
-    // fetch offers list and find the offer
-    const resp = await apiFetch2('/api/admin/offers');
-    if (!resp.ok) { showToast('Unable to load offer details'); viewAttemptsBtn.disabled = false; return; }
-    const data = await resp.json();
-    const all = data.offers || [];
-    const o = all.find(x => x.id === offerId);
-    if (!o) { showToast('Offer not found'); viewAttemptsBtn.disabled = false; return; }
-    const attempts = o.emailAttempts || [];
-    const attemptsHtml = attempts.length === 0 ? '<p>No attempts yet.</p>' : `<ol>${attempts.map(a => `<li><strong>Attempt ${a.attempt}</strong> &middot; ${new Date(a.time).toLocaleString()} &middot; ${a.success ? '<span class="green">Success</span>' : '<span class="red">Failed</span>'} <div class="attempt-detail">${a.info ? 'MessageId: ' + a.info : (a.error ? 'Error: ' + a.error : '')}</div></li>`).join('')}</ol>`;
-    const colSpan = 6;
-    const html = `<tr class="attempts-row" data-offer-id="${offerId}"><td colspan="${colSpan}"><div class="attempts-inline">${attemptsHtml}</div></td></tr>`;
-    row.insertAdjacentHTML('afterend', html);
-    viewAttemptsBtn.disabled = false;
-    return;
   }
-
-  const editBtn = ev.target.closest && ev.target.closest('.user-edit');
-  if (editBtn) {
-    const row = editBtn.closest('tr');
-    const email = row && row.dataset.email;
-    const name = row ? row.querySelector('td:nth-child(2)').textContent : '';
-    // open modal
-    document.getElementById('adminModal').hidden = false;
-    document.getElementById('adminModalEmail').value = email;
-    document.getElementById('adminModalName').value = name;
-    document.getElementById('adminModalPassword').value = '';
-    document.getElementById('adminModalTitle').textContent = `Edit ${email}`;
-    return;
-  }
-
-  const resetBtn = ev.target.closest && ev.target.closest('.user-reset');
-  if (resetBtn) {
-    const row = resetBtn.closest('tr');
-    const email = row && row.dataset.email;
-    // open modal for reset
-    document.getElementById('adminModal').hidden = false;
-    document.getElementById('adminModalEmail').value = email;
-    document.getElementById('adminModalName').value = row ? row.querySelector('td:nth-child(2)').textContent : '';
-    document.getElementById('adminModalPassword').value = '';
-    document.getElementById('adminModalTitle').textContent = `Reset password for ${email}`;
-    return;
-  }
-  // admin email controls
-  const smtpSaveBtn = ev.target.closest && ev.target.closest('#adminSmtpSave');
-  if (smtpSaveBtn) {
-    smtpSaveBtn.disabled = true;
-    const host = document.getElementById('smtpHost').value.trim();
-    const port = Number(document.getElementById('smtpPort').value || 0);
-    const user = document.getElementById('smtpUser').value.trim();
-    const pass = document.getElementById('smtpPass').value;
-    const from = document.getElementById('smtpFrom').value.trim();
-    const retries = Number(document.getElementById('smtpRetries').value || 3);
-    const retryDelay = Number(document.getElementById('smtpRetryDelay').value || 1000);
-    apiFetch2('/api/admin/smtp', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ host, port, user, pass, from, retries, retryDelayMs: retryDelay }) }).then(async (r) => {
-      if (r.ok) { showToast('SMTP saved'); await loadAdminEmails(); } else { showToast('Unable to save SMTP'); }
-      smtpSaveBtn.disabled = false;
-    }).catch(() => { showToast('Unable to save SMTP'); smtpSaveBtn.disabled = false; });
-    return;
-  }
-  const smtpClearBtn = ev.target.closest && ev.target.closest('#adminSmtpClear');
-  if (smtpClearBtn) {
-    smtpClearBtn.disabled = true;
-    apiFetch2('/api/admin/smtp', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ host: null }) }).then(async (r) => {
-      if (r.ok) { showToast('SMTP cleared'); await loadAdminEmails(); } else { showToast('Unable to clear SMTP'); }
-      smtpClearBtn.disabled = false;
-    }).catch(() => { showToast('Unable to clear SMTP'); smtpClearBtn.disabled = false; });
-    return;
-  }
-
-  const del = ev.target.closest && ev.target.closest('.user-delete');
-  if (del) {
-    if (!confirm('Delete this user and all their data? You can undo within a short window.')) return;
-    const row = del.closest('tr');
-    const email = row && row.dataset.email;
-    del.disabled = true;
-    const resp = await apiFetch2(`/api/admin/user?email=${encodeURIComponent(email)}`, { method: 'DELETE' });
-    if (resp.ok) { showToast('User deleted — you can undo from Deleted tab.'); loadAdminUsers(); } else { showToast('Unable to delete user'); }
-    del.disabled = false;
-    return;
-  }
-
-  const undoBtn = ev.target.closest && ev.target.closest('.undo-delete');
-  if (undoBtn) {
-    const row = undoBtn.closest('tr');
-    const email = row && row.dataset.email;
-    undoBtn.disabled = true;
-    const resp = await apiFetch2('/api/admin/user/undo-delete', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email }) });
-    if (resp.ok) { showToast('User restored'); loadAdminDeleted(); loadAdminUsers(); } else { showToast('Unable to restore user'); }
-    undoBtn.disabled = false;
-    return;
-  }
-
-});
-
-// Modal handlers
-const adminModal = document.getElementById('adminModal');
-const adminModalClose = document.getElementById('adminModalClose');
-const adminModalCancel = document.getElementById('adminModalCancel');
-if (adminModalClose) adminModalClose.addEventListener('click', () => { adminModal.hidden = true; const content = adminModal.querySelector('.modal-content'); const attempts = content && content.querySelector('.attempts-container'); if (attempts) attempts.remove(); const matches = content && content.querySelector('.matches-container'); if (matches) matches.remove(); });
-if (adminModalCancel) adminModalCancel.addEventListener('click', () => { adminModal.hidden = true; const content = adminModal.querySelector('.modal-content'); const attempts = content && content.querySelector('.attempts-container'); if (attempts) attempts.remove(); const matches = content && content.querySelector('.matches-container'); if (matches) matches.remove(); });
-
-if (adminModalForm) adminModalForm.addEventListener('submit', async (ev) => {
-  ev.preventDefault();
-  const email = document.getElementById('adminModalEmail').value;
-  const name = document.getElementById('adminModalName').value.trim();
-  const pwd = document.getElementById('adminModalPassword').value;
-  // if password provided, call reset endpoint
-  if (pwd && pwd.length >= 6) {
-    const resp = await apiFetch2('/api/admin/user/reset-password', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password: pwd }) });
-    if (resp.ok) { showToast('Password reset'); adminModal.hidden = true; } else { showToast('Unable to reset password'); }
-    return;
-  }
-  // otherwise update name
-  const resp = await apiFetch2('/api/admin/user/update', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, name }) });
-  if (resp.ok) { showToast('User updated'); adminModal.hidden = true; loadAdminUsers(); } else { showToast('Unable to update user'); }
-});
-
-async function loadSkillMap() {
-  // Use student-scoped API that returns canonical skills + per-user scores
-  const resp = await apiFetch2('/api/student/skillmap');
-  if (!resp.ok) { showToast('Unable to load skills'); return; }
-  const data = await resp.json();
-  const map = { skills: data.skills || [] };
-  const scoresData = { scores: data.scores || [] };
-  const scoresById = {};
-  (scoresData.scores || []).forEach(s => { if (s && s.skillId != null) scoresById[s.skillId] = s; });
-  skillNodes.innerHTML = (map.skills || []).map((skill) => {
-    const s = scoresById[skill.id] || null;
-    const level = s ? s.score : (skill.level || 0);
-    const conf = s ? Math.round((s.confidence || 0) * 100) : 60;
-    // build a small component summary for tooltip
-    const comps = s && s.components ? Object.keys(s.components).map(k => `${k}: ${s.components[k].value}`).join(' · ') : '';
-    return `<button class="skill-node ${skill.group.toLowerCase()}" data-skill-id="${skill.id}" title="${comps}"><strong>${skill.name}</strong><span>${level}%</span><small class="skill-confidence" title="Confidence">${conf}%</small></button>`;
-  }).join('');
-  skillNodes._skills = map.skills;
-  skillNodes.querySelector('.core')?.click();
 }
 
-async function loadAnalytics() {
-  const response = await apiFetch2('/api/analytics');
-  const data = await response.json();
-  analyticsBreakdown.innerHTML = data.breakdown.map((item) => `<div class="analytics-row"><div><span>${item.label}</span><strong>${item.value}%</strong></div><div class="analytics-track ${item.color}"><span style="width:${item.value}%"></span></div></div>`).join('');
-  momentumChart.innerHTML = data.weekly.map((value) => `<span style="height:${value}%" title="${value} activity"></span>`).join('');
-  analyticsRecommendation.textContent = data.recommendation;
-}
-
-async function loadMentors() {
-  const response = await apiFetch2('/api/mentors');
-  const data = await response.json();
-  mentorGrid.innerHTML = data.mentors.map((mentor) => { const requested = data.requestedMentorIds.includes(mentor.id); return `<article class="mentor-card"><div class="mentor-avatar">${mentor.initials}</div><span class="mentor-availability">${mentor.availability}</span><h2>${mentor.name}</h2><strong>${mentor.role}</strong><p>${mentor.company}</p><div class="mentor-focus"><i class="icon icon-sparkles"></i> ${mentor.focus}</div><button class="primary-button mentor-action" data-mentor-id="${mentor.id}" ${requested ? 'disabled' : ''}>${requested ? 'Request sent' : 'Request introduction'} <i class="icon ${requested ? 'icon-check' : 'icon-arrow-up-right'}"></i></button></article>`; }).join('');
-}
-
-async function loadLearning() {
-  const response = await apiFetch2('/api/learning');
-  const data = await response.json();
-  learningGrid.innerHTML = data.resources.map((resource) => `<article class="learning-card"><div class="learning-icon ${resource.color}"><i class="icon icon-book-open"></i></div><span class="type-label">${resource.skill}</span><h2>${resource.title}</h2><p>${resource.meta}</p><div class="learning-progress"><div><span>${resource.progress}% complete</span><strong>${resource.progress === 100 ? 'Complete' : resource.progress ? 'In progress' : 'Not started'}</strong></div><div class="progress-track"><div style="width:${resource.progress}%"></div></div></div><button class="primary-button learning-action" data-learning-id="${resource.id}">${resource.progress === 100 ? 'Review course' : resource.progress ? 'Continue learning' : 'Start course'} <i class="icon icon-arrow-up-right"></i></button></article>`).join('');
-}
-
-async function loadInterviewQuestion() {
-  const response = await apiFetch2('/api/interview/question');
-  const question = await response.json();
-  questionCategory.textContent = question.category;
-  interviewQuestion.textContent = question.prompt;
-  interviewAnswer.value = '';
-  interviewFeedback.hidden = true;
-}
-
-async function loadResume() {
-  const response = await apiFetch2('/api/resume');
-  const data = await response.json();
-  const complete = data.checklist.filter((item) => item.complete).length;
-  const percent = Math.round((complete / data.checklist.length) * 100);
-  resumeRing.textContent = `${percent}%`;
-  resumeProgress.style.width = `${percent}%`;
-  resumeCount.textContent = `${complete}/${data.checklist.length} complete`;
-  resumeItems.innerHTML = data.checklist.map((item) => `<label class="resume-item"><input type="checkbox" data-resume-id="${item.id}" ${item.complete ? 'checked' : ''}><span class="resume-check"><i class="icon icon-check"></i></span><span><strong>${item.label}</strong><small>${item.detail}</small></span></label>`).join('');
-}
-
-async function loadSkillGaps() {
-  const response = await apiFetch2('/api/skill-gaps');
-  const data = await response.json();
-  gapPlanGrid.innerHTML = data.skillGaps.map((gap) => `<article class="gap-plan-card"><div class="gap-plan-top"><span class="opportunity-icon job-icon"><i class="icon icon-target"></i></span><span class="gap-percent">${gap.progress}% ready</span></div><h2>${gap.name}</h2><p>${gap.focus}</p><div class="gap-track"><span style="width:${gap.progress}%"></span></div><div class="gap-plan-footer"><span>${gap.progress < 50 ? 'Priority focus' : 'Building momentum'}</span><button class="primary-button gap-action" data-gap-id="${gap.id}" data-progress="${gap.progress}">${gap.progress >= 80 ? 'Review' : 'Log progress'} <i class="icon icon-arrow-up-right"></i></button></div></article>`).join('');
-}
-
-async function loadApplications() {
-  const response = await apiFetch2('/api/applications');
-  const data = await response.json();
-  applications = data.applications;
-  renderApplications();
-}
-
-function renderApplications() {
-  const statuses = ['Saved', 'Applied', 'Interview', 'Offer'];
-  const query = document.getElementById('applicationSearch').value.toLowerCase();
-  const filter = document.getElementById('applicationStatus').value;
-  const visible = applications.filter((item) => (filter === 'all' || item.status === filter) && `${item.role} ${item.company}`.toLowerCase().includes(query));
-  applicationStats.innerHTML = statuses.map((status) => `<div class="application-stat"><strong>${applications.filter((item) => item.status === status).length}</strong><span>${status}</span></div>`).join('');
-  applicationBoard.innerHTML = statuses.map((status) => `<section class="application-column"><div class="column-heading"><h2>${status}</h2><span>${visible.filter((item) => item.status === status).length}</span></div>${visible.filter((item) => item.status === status).map((item) => `<article class="application-card"><span class="type-label">${item.updated}</span><h3>${item.role}</h3><p>${item.company}</p>${item.note ? `<div class="application-note"><i class="icon icon-notebook-pen"></i>${item.note}</div>` : ''}<select data-application-id="${item.id}" aria-label="Update ${item.role} status">${statuses.map((option) => `<option ${option === item.status ? 'selected' : ''}>${option}</option>`).join('')}</select><button class="note-application" data-note-id="${item.id}" type="button"><i class="icon icon-notebook-pen"></i> ${item.note ? 'Edit note' : 'Add note'}</button><button class="remove-application" data-remove-id="${item.id}" type="button">Remove</button></article>`).join('') || '<p class="column-empty">Nothing here yet</p>'}</section>`).join('');
-}
-
-function renderJobs() {
-  if (!jobsResults) return;
-  const query = document.getElementById('jobSearch').value.toLowerCase();
-  const type = document.getElementById('jobType').value;
-  const city = document.getElementById('jobCity').value;
-  const sort = document.getElementById('jobSort').value;
-  const matches = opportunities.filter((job) => {
-    const searchable = `${job.title} ${job.company} ${job.skills.join(' ')}`.toLowerCase();
-    return (type === 'all' || job.type === type) && (city === 'all' || job.location.includes(city)) && searchable.includes(query);
-  });
-  matches.sort((first, second) => sort === 'title' ? first.title.localeCompare(second.title) : second.match - first.match);
-  jobsResults.innerHTML = matches.length ? matches.map((job) => { const saved = savedRoleKeys.has(`${job.title}::${job.company}`); return `<article class="job-result" data-role="${job.title}" data-company="${job.company}"><div class="opportunity-icon ${job.type === 'INTERNSHIP' ? 'internship-icon' : 'job-icon'}"><i class="icon ${job.type === 'INTERNSHIP' ? 'icon-graduation-cap' : 'icon-briefcase-business'}"></i></div><div class="job-result-main"><span class="type-label">${job.type}</span><h2>${job.title}</h2><p>${job.company} <span class="dot-separator">•</span> ${job.location}</p><div class="chips">${job.skills.map((skill) => `<span>${skill}</span>`).join('')}</div></div><div class="match-score"><strong>${job.match}%</strong><span>match</span><button class="primary-button job-apply" type="button" ${saved ? 'disabled' : ''}>${saved ? 'Saved' : 'Save role'} <i class="icon ${saved ? 'icon-check' : 'icon-bookmark'}"></i></button></div></article>`; }).join('') : '<div class="empty-jobs"><i class="icon icon-search-x"></i><h2>No matching roles</h2><p>Try a broader search or another opportunity type.</p></div>';
-}
-
-function openAssistant() {
-  assistantPanel.classList.add('open');
-  assistantPanel.setAttribute('aria-hidden', 'false');
-  assistantQuestion.focus();
-}
-
-function closeAssistant() {
-  assistantPanel.classList.remove('open');
-  assistantPanel.setAttribute('aria-hidden', 'true');
-}
-
-document.addEventListener('click', (event) => {
-  const target = event.target.closest('[data-view]');
-  if (target) {
-    event.preventDefault();
-    setView(target.dataset.view);
-  }
-});
-window.addEventListener('popstate', () => setView(window.location.hash.slice(1) || 'dashboard', false));
-window.addEventListener('hashchange', () => setView(window.location.hash.slice(1) || 'dashboard', false));
-
-menuToggle.addEventListener('click', () => sidebar.classList.toggle('open'));
-focusSearch.addEventListener('click', () => { searchPanel.classList.add('open'); searchPanel.setAttribute('aria-hidden', 'false'); globalSearch.focus(); });
-document.getElementById('closeSearch').addEventListener('click', () => { searchPanel.classList.remove('open'); searchPanel.setAttribute('aria-hidden', 'true'); });
-globalSearch.addEventListener('input', async () => {
-  const query = globalSearch.value.trim();
-  if (!query) { searchResults.innerHTML = '<p>Start typing to search roles and skills.</p>'; return; }
-  const response = await apiFetch2(`/api/search?q=${encodeURIComponent(query)}`);
-  const data = await response.json();
-  searchResults.innerHTML = data.results.length ? data.results.map((result) => `<button class="search-result" data-view="${result.view}"><span class="type-label">${result.type}</span><strong>${result.title}</strong><small>${result.detail}</small><i class="icon icon-arrow-up-right"></i></button>`).join('') : '<p>No matches found. Try another search.</p>';
-});
-document.getElementById('changeGoal').addEventListener('click', async () => { const response = await fetch('/api/dashboard'); const data = await response.json(); goalOptions.innerHTML = ['AI Engineer', 'ML Engineer', 'Data Scientist', 'MLOps Engineer'].map((goal) => `<button class="goal-option ${goal === data.goal ? 'selected' : ''}" data-goal="${goal}"><strong>${goal}</strong><i class="icon ${goal === data.goal ? 'icon-check' : 'icon-arrow-up-right'}"></i></button>`).join(''); goalPanel.classList.add('open'); goalPanel.setAttribute('aria-hidden', 'false'); });
-document.getElementById('closeGoal').addEventListener('click', () => { goalPanel.classList.remove('open'); goalPanel.setAttribute('aria-hidden', 'true'); });
-goalOptions.addEventListener('click', async (event) => { const option = event.target.closest('.goal-option'); if (!option) return; await fetch('/api/goal', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ goal: option.dataset.goal }) }); document.querySelector('.goal-value').textContent = option.dataset.goal; document.querySelector('.metric-card.fit .muted').textContent = `For ${option.dataset.goal}`; goalPanel.classList.remove('open'); goalPanel.setAttribute('aria-hidden', 'true'); showToast(`Goal updated to ${option.dataset.goal}.`); });
-document.getElementById('jobSearch').addEventListener('input', renderJobs);
-document.getElementById('jobType').addEventListener('change', renderJobs);
-document.getElementById('jobCity').addEventListener('change', renderJobs);
-document.getElementById('jobSort').addEventListener('change', renderJobs);
-jobsResults.addEventListener('click', (event) => {
-  if (event.target.closest('.job-result h2')) {
-    const card = event.target.closest('.job-result');
-    selectedRole = { role: card.dataset.role, company: card.dataset.company, match: card.querySelector('.match-score strong').textContent, detail: card.querySelector('.job-result-main p').textContent, skills: [...card.querySelectorAll('.chips span')].map((chip) => chip.textContent) };
-    document.getElementById('roleTitle').textContent = selectedRole.role;
-    document.getElementById('roleCompany').textContent = selectedRole.detail;
-    document.getElementById('roleMatch').textContent = `${selectedRole.match} match`;
-    document.getElementById('roleSkills').innerHTML = selectedRole.skills.map((skill) => `<span>${skill}</span>`).join('');
-    rolePanel.classList.add('open'); rolePanel.setAttribute('aria-hidden', 'false');
-    return;
-  }
-  const button = event.target.closest('.job-apply');
-  if (!button) return;
-  const card = button.closest('.job-result');
-  apiFetch2('/api/applications', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ role: card.dataset.role, company: card.dataset.company }) }).then(() => { savedRoleKeys.add(`${card.dataset.role}::${card.dataset.company}`); button.innerHTML = 'Saved <i class="icon icon-check"></i>'; button.disabled = true; showToast('Role saved to your Applications.'); });
-});
-document.getElementById('closeRole').addEventListener('click', () => { rolePanel.classList.remove('open'); rolePanel.setAttribute('aria-hidden', 'true'); });
-document.getElementById('saveRole').addEventListener('click', async () => { if (!selectedRole) return; await apiFetch2('/api/applications', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ role: selectedRole.role, company: selectedRole.company }) }); rolePanel.classList.remove('open'); rolePanel.setAttribute('aria-hidden', 'true'); showToast('Role saved to your Applications.'); });
-document.getElementById('addApplication').addEventListener('click', () => { addApplicationPanel.classList.add('open'); addApplicationPanel.setAttribute('aria-hidden', 'false'); document.getElementById('newRole').focus(); });
-document.getElementById('closeAddApplication').addEventListener('click', () => { addApplicationPanel.classList.remove('open'); addApplicationPanel.setAttribute('aria-hidden', 'true'); });
-document.addEventListener('keydown', (event) => {
-  if (event.key !== 'Escape') return;
-  [assistantPanel, notificationPanel, searchPanel, goalPanel, rolePanel, addApplicationPanel].forEach((panel) => { panel.classList.remove('open'); panel.setAttribute('aria-hidden', 'true'); });
-});
-document.getElementById('addApplicationForm').addEventListener('submit', async (event) => { event.preventDefault(); const role = document.getElementById('newRole').value.trim(); const company = document.getElementById('newCompany').value.trim(); await apiFetch2('/api/applications', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ role, company }) }); event.target.reset(); addApplicationPanel.classList.remove('open'); addApplicationPanel.setAttribute('aria-hidden', 'true'); showToast('Application added to Saved.'); loadApplications(); });
-applicationBoard.addEventListener('change', async (event) => {
-  const select = event.target.closest('[data-application-id]');
-  if (!select) return;
-  await apiFetch2(`/api/applications/${select.dataset.applicationId}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: select.value }) });
-  showToast('Application status updated.');
-  loadApplications();
-});
-applicationBoard.addEventListener('click', async (event) => {
-  const noteButton = event.target.closest('[data-note-id]');
-  if (noteButton) { const note = window.prompt('Application note', ''); if (note === null) return; await apiFetch2(`/api/applications/${noteButton.dataset.noteId}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ note }) }); showToast('Application note saved.'); loadApplications(); return; }
-  const button = event.target.closest('[data-remove-id]');
-  if (!button) return;
-  await apiFetch2(`/api/applications/${button.dataset.removeId}`, { method: 'DELETE' });
-  showToast('Application removed from your tracker.');
-  loadApplications();
-});
-document.getElementById('applicationSearch').addEventListener('input', renderApplications);
-document.getElementById('applicationStatus').addEventListener('change', renderApplications);
-gapPlanGrid.addEventListener('click', async (event) => {
-  const button = event.target.closest('.gap-action');
-  if (!button) return;
-  const nextProgress = Math.min(100, Number(button.dataset.progress) + 15);
-  await apiFetch2(`/api/skill-gaps/${button.dataset.gapId}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ progress: nextProgress }) });
-  showToast('Skill progress saved. Keep the momentum going.');
-  loadSkillGaps();
-});
-resumeItems.addEventListener('change', async (event) => {
-  const checkbox = event.target.closest('[data-resume-id]');
-  if (!checkbox) return;
-  await apiFetch2(`/api/resume/${checkbox.dataset.resumeId}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ complete: checkbox.checked }) });
-  showToast('Resume checklist updated.');
-  loadResume();
-});
-const downloadResumeBtn = document.getElementById('downloadResume');
-if (downloadResumeBtn) downloadResumeBtn.addEventListener('click', () => {
-  const resume = `ARJUN SHARMA\n${document.getElementById('settingsTrack')?.textContent || 'AI Engineer'}\n\nPROFILE\nAI Engineer focused on Python, machine learning, and production deployment.\n\nSKILLS\nPython | Machine Learning | FastAPI | Docker | Deep Learning\n\nPROJECTS\nCustomer churn predictor\nProduction prediction API\n\nGenerated by SkillBridge AI`;
-  const link = document.createElement('a');
-  link.href = URL.createObjectURL(new Blob([resume], { type: 'text/plain' }));
-  link.download = 'arjun-sharma-resume.txt';
-  link.click();
-  URL.revokeObjectURL(link.href);
-  showToast('Your tailored resume has been downloaded.');
-});
-const newQuestionBtn = document.getElementById('newQuestion');
-if (newQuestionBtn) newQuestionBtn.addEventListener('click', loadInterviewQuestion);
-const interviewFormEl = document.getElementById('interviewForm');
-if (interviewFormEl) interviewFormEl.addEventListener('submit', async (event) => {
-  event.preventDefault();
-  const response = await apiFetch2('/api/interview/feedback', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ answer: interviewAnswer.value }) });
-  const data = await response.json();
-  interviewFeedback.hidden = false;
-  interviewFeedback.innerHTML = response.ok ? `<strong>${data.score}/100 coaching score</strong><p>${data.feedback}</p>` : `<strong>Keep going</strong><p>${data.error}</p>`;
-});
-if (learningGrid) learningGrid.addEventListener('click', async (event) => {
-  const button = event.target.closest('.learning-action');
-  if (!button) return;
-  await apiFetch2(`/api/learning/${button.dataset.learningId}`, { method: 'PATCH' });
-  showToast('Learning progress saved.');
-  loadLearning();
-});
-if (certificationGrid) certificationGrid.addEventListener('click', async (event) => { const button = event.target.closest('.certification-action'); if (!button || button.disabled) return; await apiFetch2(`/api/certifications/${button.dataset.certificationId}`, { method: 'PATCH' }); showToast('Certification progress saved.'); loadCertifications(); });
-if (assessmentForm) assessmentForm.addEventListener('submit', async (event) => { event.preventDefault(); const answers = Object.fromEntries([...assessmentForm.querySelectorAll('input:checked')].map((input) => [input.name.replace('question-', ''), input.value])); const response = await apiFetch2('/api/student/assessments/submit', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ answers }) }); const result = await response.json(); assessmentResult.hidden = false; assessmentResult.innerHTML = `<strong>${result.score}/100</strong><span>${result.correct} of ${result.total} correct</span><p>${result.recommendation}</p>`; });
-const retakeAssessmentBtn = document.getElementById('retakeAssessment');
-if (retakeAssessmentBtn) retakeAssessmentBtn.addEventListener('click', () => { if (assessmentForm) assessmentForm.reset(); assessmentResult.hidden = true; assessmentQuestions.scrollIntoView({ behavior: 'smooth', block: 'start' }); });
-if (mentorGrid) mentorGrid.addEventListener('click', async (event) => {
-  const button = event.target.closest('.mentor-action');
-  if (!button || button.disabled) return;
-  await apiFetch2('/api/mentorship/request', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mentorId: button.dataset.mentorId }) });
-  showToast('Introduction request sent.');
-  loadMentors();
-});
-if (skillNodes) skillNodes.addEventListener('click', (event) => {
-  const node = event.target.closest('.skill-node');
-  if (!node) return;
-  const skill = skillNodes._skills.find((item) => item.id === Number(node.dataset.skillId));
-  skillNodes.querySelectorAll('.skill-node').forEach((item) => item.classList.toggle('selected', item === node));
-  skillDetail.innerHTML = `<span class="type-label">${skill.group} skill</span><h2>${skill.name}</h2><div class="detail-score">${skill.level}% <small>current level</small></div><p>Your next best move</p><strong>${skill.next}</strong><button class="primary-button" data-view="learning">Open learning plan <i class="icon icon-arrow-up-right"></i></button>`;
-});
-if (projectGrid) projectGrid.addEventListener('click', async (event) => {
-  const button = event.target.closest('.project-action');
-  if (!button || button.disabled) return;
-  await apiFetch2(`/api/projects/${button.dataset.projectId}`, { method: 'PATCH' });
-  showToast('Project marked complete. Your profile is stronger.');
-  loadProjects();
-});
-const saveSettingsBtn = document.getElementById('saveSettings');
-if (saveSettingsBtn) saveSettingsBtn.addEventListener('click', async () => {
-  const updates = Object.fromEntries([...notificationSettings.querySelectorAll('[data-setting]')].map((input) => [input.dataset.setting, input.checked]));
-  await apiFetch2('/api/settings', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(updates) });
-  showToast('Preferences saved.');
-});
-const profileFormEl = document.getElementById('profileForm');
-if (profileFormEl) profileFormEl.addEventListener('submit', async (event) => {
-  event.preventDefault();
-  const name = document.getElementById('profileName').value;
-  const track = document.getElementById('profileTrack').value;
-  const college = (document.getElementById('profileCollege') && document.getElementById('profileCollege').value) || '';
-  const department = (document.getElementById('profileDepartment') && document.getElementById('profileDepartment').value) || '';
-  const year = (document.getElementById('profileYear') && document.getElementById('profileYear').value) || '';
-  const phone = (document.getElementById('profilePhone') && document.getElementById('profilePhone').value) || '';
-  try {
-    const resp = await apiFetch2('/api/profile', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, track, college, department, year, phone }) });
-    const data = await resp.json().catch(()=>({}));
-    if (!resp.ok) { showToast(data.error || 'Unable to update profile'); return; }
-    document.getElementById('settingsName').textContent = name;
-    document.getElementById('settingsTrack').textContent = track;
-    document.querySelector('.profile-mini strong').textContent = name;
-    document.querySelector('.profile-mini span').textContent = track;
-    showToast('Profile updated.');
-  } catch (e) {
-    showToast('Unable to update profile');
-  }
-});
-const signOutBtn = document.getElementById('signOut');
-if (signOutBtn) signOutBtn.addEventListener('click', () => { localStorage.removeItem('skillbridge-session'); appShell.classList.remove('authenticated'); loginScreen.hidden = false; loginForm.reset(); loginError.hidden = true; showToast('You have been signed out.'); });
-const closeAssistantBtn = document.getElementById('closeAssistant');
-if (closeAssistantBtn) closeAssistantBtn.addEventListener('click', closeAssistant);
-async function loadNotifications() {
-  const response = await apiFetch2('/api/notifications');
-  const data = await response.json();
-  notificationList.innerHTML = data.notifications.map((notification) => `<article class="notification-item ${notification.unread ? 'unread' : ''}"><div><strong>${notification.title}</strong><p>${notification.detail}</p><small>${notification.time}</small></div>${notification.unread ? '<i class="unread-dot"></i>' : ''}</article>`).join('');
-  notificationButton.classList.toggle('has-unread', data.notifications.some((notification) => notification.unread));
-}
-if (notificationButton) notificationButton.addEventListener('click', () => { const open = notificationPanel.classList.toggle('open'); notificationPanel.setAttribute('aria-hidden', String(!open)); if (open) loadNotifications(); });
-const markNotificationsReadBtn = document.getElementById('markNotificationsRead');
-if (markNotificationsReadBtn) markNotificationsReadBtn.addEventListener('click', async () => { await apiFetch2('/api/notifications/read', { method: 'PATCH' }); loadNotifications(); showToast('Notifications marked as read.'); });
-document.querySelectorAll('[data-question]').forEach((button) => button.addEventListener('click', () => {
-  assistantQuestion.value = button.dataset.question;
-  if (assistantForm) assistantForm.requestSubmit();
-}));
-if (assistantForm) assistantForm.addEventListener('submit', async (event) => {
-  event.preventDefault();
-  const question = assistantQuestion.value.trim();
-  if (!question) return;
-  assistantAnswer.textContent = 'Thinking through your next move...';
-  assistantForm.querySelector('button').disabled = true;
-  try {
-    const response = await apiFetch2('/api/assistant', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ question }) });
-    const data = await response.json();
-    if (!response.ok) throw new Error(data.error || 'Assistant request failed');
-    assistantAnswer.textContent = data.answer;
-  } catch (error) {
-    assistantAnswer.textContent = 'The assistant is unavailable right now. Please try again.';
-  } finally {
-    assistantForm.querySelector('button').disabled = false;
-  }
-});
-
-loadDashboard();
-setView(window.location.hash.slice(1) || 'dashboard', false);
-
-// Admin controls: refresh and filter
-const adminRefreshBtn = document.getElementById('adminRefresh');
-const adminFilterInput = document.getElementById('adminFilter');
-if (adminRefreshBtn) adminRefreshBtn.addEventListener('click', (e) => { e.preventDefault(); loadAdmin(); });
-if (adminFilterInput) adminFilterInput.addEventListener('input', () => { // debounce
-  window.clearTimeout(adminFilterInput._debounce);
-  adminFilterInput._debounce = setTimeout(loadAdmin, 300);
-});
-// Deleted and audit refresh buttons
-const adminRefreshDeleted = document.getElementById('adminRefreshDeleted');
-if (adminRefreshDeleted) adminRefreshDeleted.addEventListener('click', (e) => { e.preventDefault(); loadAdminDeleted(); });
-const adminRefreshAudit = document.getElementById('adminRefreshAudit');
-if (adminRefreshAudit) adminRefreshAudit.addEventListener('click', (e) => { e.preventDefault(); loadAdminAudit(); });
-const adminRefreshEmails = document.getElementById('adminRefreshEmails');
-if (adminRefreshEmails) adminRefreshEmails.addEventListener('click', (e) => { e.preventDefault(); loadAdminEmails(); });
-const adminRefreshOffers = document.getElementById('adminRefreshOffers');
-if (adminRefreshOffers) adminRefreshOffers.addEventListener('click', (e) => { e.preventDefault(); loadAdminEmails(); });
-
-// Admin: Recompute all skill scores button
-const adminRecomputeAll = document.getElementById('adminRecomputeAll');
-if (adminRecomputeAll) adminRecomputeAll.addEventListener('click', async (e) => {
+// 1. COMPANY LOGIN WITH COMPANY NAME, USERNAME & PASSWORD
+async function handleCompanyLogin(e) {
   e.preventDefault();
-  adminRecomputeAll.disabled = true;
-  showToast('Recomputing all users — this may take a moment');
+  const companyName = document.getElementById('comp-login-name').value;
+  const companyUsername = document.getElementById('comp-login-username').value;
+  const password = document.getElementById('comp-login-password').value;
+
   try {
-    const resp = await apiFetch2('/api/skill-scores/recompute-all', { method: 'POST' });
-    if (resp.ok) {
-      const data = await resp.json().catch(()=>({ processed: 0 }));
-      showToast(`Recomputed ${data.processed || 0} users`);
-      // refresh UI lists
-      try { await loadAdminUsers(); } catch (e) { /* ignore */ }
-      try { await loadSkillMap(); } catch (e) { /* ignore */ }
-    } else {
-      showToast('Unable to recompute all users (server error)');
-    }
-  } catch (err) { showToast('Unable to contact server to recompute'); }
-  adminRecomputeAll.disabled = false;
-});
+    const data = await apiFetch('/company/login', {
+      method: 'POST',
+      body: JSON.stringify({ companyName, companyUsername, password })
+    });
 
-// When entering admin view, activate Users tab by default
-window.addEventListener('hashchange', () => {
-  if (window.location.hash.slice(1) === 'admin') {
-    const usersTab = document.querySelector('#adminView .tab-button[data-admin-tab="users"]');
-    if (usersTab) usersTab.click();
+    authToken = data.token;
+    localStorage.setItem('sb_token', authToken);
+    closeAuthModal();
+    await fetchCurrentUser();
+  } catch (err) { alert(err.message || 'Company Login Failed'); }
+}
+
+// 2. COMPANY REGISTRATION WITH UNIQUE COMPANY ID
+function openCompanyRegisterModal() {
+  closeAuthModal();
+  document.getElementById('company-register-modal').classList.remove('hidden');
+}
+
+function closeCompanyRegisterModal() {
+  document.getElementById('company-register-modal').classList.add('hidden');
+}
+
+async function handleCompanyRegistration(e) {
+  e.preventDefault();
+  const pwd = document.getElementById('reg-comp-password').value;
+  const confirmPwd = document.getElementById('reg-comp-confirm-password').value;
+
+  if (pwd !== confirmPwd) {
+    alert('Passwords do not match.');
+    return;
   }
-});
 
+  const regData = {
+    companyName: document.getElementById('reg-comp-name').value,
+    companyUsername: document.getElementById('reg-comp-username').value,
+    companyEmail: document.getElementById('reg-comp-email').value,
+    password: pwd,
+    industry: document.getElementById('reg-comp-industry').value,
+    managerName: document.getElementById('reg-mgr-name').value,
+    managerDesignation: document.getElementById('reg-mgr-desig').value
+  };
 
+  try {
+    const data = await apiFetch('/company/register', {
+      method: 'POST',
+      body: JSON.stringify(regData)
+    });
+
+    authToken = data.token;
+    localStorage.setItem('sb_token', authToken);
+    alert(`🎉 Company Registered Successfully!\nGenerated Unique Company ID: ${data.companyId}`);
+    closeCompanyRegisterModal();
+    await fetchCurrentUser();
+  } catch (err) { alert(err.message); }
+}
+
+async function handleLogin(e) {
+  e.preventDefault();
+  const identity = document.getElementById('login-identity').value;
+  const password = document.getElementById('login-password').value;
+
+  try {
+    const data = await apiFetch('/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({ identity, password })
+    });
+    authToken = data.token;
+    localStorage.setItem('sb_token', authToken);
+    closeAuthModal();
+    await fetchCurrentUser();
+  } catch (err) { alert(err.message || 'Login failed'); }
+}
+
+// -------------------------------------------------------------
+// STUDENT MODULE: PROFILE, SKILLS, PROJECTS & ELIGIBILITY OPPORTUNITIES
+// -------------------------------------------------------------
+async function loadStudentDashboard() {
+  try {
+    const data = await apiFetch('/student/profile');
+    const profile = data.profile || {};
+
+    document.getElementById('welcome-student-name').textContent = `Welcome back, ${profile.name || 'Candidate'} 👋`;
+    document.getElementById('welcome-student-sub').textContent = `${profile.degree || 'B.Tech CSE'} • ${profile.college || 'Anna University'} (CGPA: ${profile.cgpa || 8.8})`;
+
+    const completion = data.completion || { percentage: 82, missingActions: [] };
+    document.getElementById('profile-progress-text').textContent = `${completion.percentage}%`;
+
+    const circle = document.getElementById('profile-progress-circle');
+    if (circle) circle.setAttribute('stroke-dashoffset', 100 - completion.percentage);
+
+    const aiScoreData = data.aiScore || { overallScore: 94 };
+    document.getElementById('dash-skill-score').textContent = `${aiScoreData.overallScore} / 100`;
+
+    loadStudentDashboardJobs();
+  } catch (err) { console.error(err); }
+}
+
+async function loadStudentDashboardJobs() {
+  try {
+    const jobs = await apiFetch('/student/opportunities');
+    const container = document.getElementById('dash-featured-jobs-list');
+    if (container) {
+      container.innerHTML = (jobs || []).map(j => {
+        const initial = (j.company_name || 'T')[0].toUpperCase();
+        const badgeClass = j.isEligible ? 'badge-completed' : 'badge-cyber text-danger';
+        return `
+          <div class="job-item-card">
+            <div class="flex-align gap-3">
+              <div class="company-logo-box">${initial}</div>
+              <div>
+                <div class="flex-align gap-2 mb-0.5">
+                  <h4 class="font-bold text-white text-sm">${j.title}</h4>
+                  <span class="${badgeClass} text-xs"><i class="fa-solid ${j.isEligible ? 'fa-circle-check' : 'fa-xmark'} mr-1"></i> ${j.eligibilityStatus} (${j.matchScore}%)</span>
+                </div>
+                <p class="text-xs text-slate-400">
+                  <b class="text-cyan">${j.company_name}</b> • Min CGPA: ${j.min_cgpa} • <span class="text-emerald font-semibold">${j.salary_stipend}</span>
+                </p>
+              </div>
+            </div>
+            ${j.isEligible ?
+              `<button class="btn btn-sm btn-primary-cyber" onclick="applyToJob(${j.id})">Apply Now</button>` :
+              `<button class="btn btn-sm btn-outline-cyber opacity-50 cursor-not-allowed" disabled title="${(j.reasons || []).join('; ')}">Not Eligible</button>`
+            }
+          </div>
+        `;
+      }).join('');
+    }
+  } catch (err) { console.error(err); }
+}
+
+async function loadStudentProfileView() {
+  try {
+    const data = await apiFetch('/student/profile');
+    const p = data.profile || {};
+    if (p.name) document.getElementById('prof-fullname').value = p.name;
+    if (p.phone) document.getElementById('prof-phone').value = p.phone;
+    if (p.college) document.getElementById('prof-college').value = p.college;
+    if (p.department) document.getElementById('prof-dept').value = p.department;
+    if (p.cgpa) document.getElementById('prof-cgpa').value = p.cgpa;
+    if (p.current_year) document.getElementById('prof-year-sem').value = p.current_year;
+  } catch (err) { console.error(err); }
+}
+
+async function saveStudentProfile() {
+  const updated = {
+    name: document.getElementById('prof-fullname').value,
+    phone: document.getElementById('prof-phone').value,
+    college: document.getElementById('prof-college').value,
+    department: document.getElementById('prof-dept').value,
+    cgpa: Number(document.getElementById('prof-cgpa').value),
+    current_year: document.getElementById('prof-year-sem').value
+  };
+
+  try {
+    await apiFetch('/student/profile', {
+      method: 'PUT',
+      body: JSON.stringify(updated)
+    });
+    alert('Profile & Academic Details Saved!');
+    loadStudentDashboard();
+  } catch (err) { alert(err.message); }
+}
+
+async function loadStudentSkills() {
+  try {
+    const skills = await apiFetch('/student/skills');
+    const container = document.getElementById('skills-manager-list');
+    if (!container) return;
+
+    container.innerHTML = (skills || []).map(s => `
+      <div class="glass-card-cyber p-4">
+        <div class="flex-between mb-2">
+          <h4 class="font-bold text-white text-md">${s.name}</h4>
+          <div class="flex-align gap-2">
+            <span class="badge-cyber font-bold">${s.level}% Level</span>
+            <button class="text-danger text-xs ml-2" onclick="deleteSkill(${s.id})"><i class="fa-solid fa-trash"></i></button>
+          </div>
+        </div>
+        <div class="w-full bg-obsidian rounded-full h-2 overflow-hidden border border-cyber">
+          <div class="bg-cyan h-2 rounded-full" style="width: ${s.level}%; background: #38bdf8;"></div>
+        </div>
+      </div>
+    `).join('');
+  } catch (err) { console.error(err); }
+}
+
+async function openAddSkillModal() {
+  const name = prompt('Skill Name:');
+  if (!name) return;
+  const level = prompt('Proficiency Level (1-100%):', '85');
+
+  try {
+    await apiFetch('/student/skills', {
+      method: 'POST',
+      body: JSON.stringify({ name, level })
+    });
+    loadStudentSkills();
+  } catch (err) { alert(err.message); }
+}
+
+async function deleteSkill(skillId) {
+  try {
+    await apiFetch(`/student/skills/${skillId}`, { method: 'DELETE' });
+    loadStudentSkills();
+  } catch (err) { alert(err.message); }
+}
+
+async function openAddProjectModal() {
+  const title = prompt('Project Title:');
+  if (!title) return;
+  const github_url = prompt('GitHub Repository URL:');
+  const demo_url = prompt('Live Demo URL:');
+
+  try {
+    await apiFetch('/student/projects', {
+      method: 'POST',
+      body: JSON.stringify({ title, github_url, demo_url, description: title })
+    });
+    loadStudentProjects();
+  } catch (err) { alert(err.message); }
+}
+
+async function loadStudentProjects() {
+  try {
+    const projects = await apiFetch('/student/projects');
+    const container = document.getElementById('projects-list');
+    if (!container) return;
+
+    container.innerHTML = (projects || []).map(p => `
+      <div class="glass-card-cyber p-4">
+        <div class="flex-between mb-2">
+          <h4 class="font-bold text-white">${p.title}</h4>
+          <span class="badge-cyber">AI Complexity: ${p.ai_complexity}%</span>
+        </div>
+        <p class="text-xs text-slate-300 mb-2">${p.description}</p>
+        <a href="${p.github_url || '#'}" target="_blank" class="text-xs text-cyan"><i class="fa-brands fa-github mr-1"></i> ${p.github_url || 'GitHub Link'}</a>
+      </div>
+    `).join('');
+  } catch (err) { console.error(err); }
+}
+
+async function openUploadCertModal() {
+  const name = prompt('Certificate Name:');
+  if (!name) return;
+  const organization = prompt('Issuing Organization:', 'Amazon Web Services');
+
+  try {
+    await apiFetch('/student/certifications', {
+      method: 'POST',
+      body: JSON.stringify({ name, organization, cert_url: '/uploads/aws_cert.pdf' })
+    });
+    loadStudentCertifications();
+  } catch (err) { alert(err.message); }
+}
+
+async function loadStudentCertifications() {
+  try {
+    const certs = await apiFetch('/student/certifications');
+    const container = document.getElementById('certifications-list');
+    if (!container) return;
+
+    container.innerHTML = (certs || []).map(c => `
+      <div class="glass-card-cyber p-4">
+        <div class="flex-between mb-2">
+          <h4 class="font-bold text-white">${c.name}</h4>
+          <span class="badge-cyber font-bold">Score: ${c.ai_valuation_score || 95}/100</span>
+        </div>
+        <p class="text-sm text-slate-400 mb-2"><i class="fa-solid fa-building mr-1"></i> ${c.organization}</p>
+        <span class="text-xs text-slate-400 font-mono">${c.hash}</span>
+      </div>
+    `).join('');
+  } catch (err) { console.error(err); }
+}
+
+async function loadAISkillScoreView() {
+  try {
+    const data = await apiFetch('/ai/skill-score');
+    document.getElementById('ai-score-big-display').textContent = `${data.overallScore} / 100`;
+
+    const strengthsEl = document.getElementById('ai-score-strengths');
+    if (strengthsEl) strengthsEl.innerHTML = (data.strengths || []).map(s => `<li><i class="fa-solid fa-check text-emerald mr-2"></i> ${s}</li>`).join('');
+
+    const improvementsEl = document.getElementById('ai-score-improvements');
+    if (improvementsEl) improvementsEl.innerHTML = (data.improvements || []).map(i => `<li><i class="fa-solid fa-arrow-right text-amber mr-2"></i> ${i}</li>`).join('');
+  } catch (err) { console.error(err); }
+}
+
+// OPPORTUNITIES & ELIGIBILITY CHECK FOR STUDENT
+async function loadStudentOpportunities() {
+  try {
+    const jobs = await apiFetch('/student/opportunities');
+    const container = document.getElementById('opportunities-full-list');
+    if (!container) return;
+
+    container.innerHTML = (jobs || []).map(j => {
+      const isEligible = j.isEligible;
+      const badgeClass = isEligible ? 'badge-completed' : 'badge-cyber text-danger';
+
+      return `
+        <div class="glass-card-cyber p-5 border border-cyber">
+          <div class="flex-between mb-3 border-b-cyber pb-3">
+            <div>
+              <div class="flex-align gap-2 mb-1">
+                <span class="${badgeClass} text-xs font-bold"><i class="fa-solid ${isEligible ? 'fa-circle-check' : 'fa-triangle-exclamation'} mr-1"></i> ${j.eligibilityStatus}</span>
+                <span class="badge-cyber text-xs">Match Score: ${j.matchScore}%</span>
+              </div>
+              <h3 class="font-bold text-white text-xl">${j.title}</h3>
+              <p class="text-xs text-cyan font-semibold">${j.company_name} (ID: ${j.companyId}) • Min CGPA: ${j.min_cgpa} • Min AI Score: ${j.min_ai_score}</p>
+            </div>
+            <span class="badge-cyber font-bold text-sm">${j.salary_stipend}</span>
+          </div>
+          <p class="text-xs text-slate-300 mb-3">${j.description}</p>
+          ${!isEligible ? `<div class="p-3 bg-obsidian rounded border border-danger mb-3 text-xs text-danger"><i class="fa-solid fa-circle-exclamation mr-1"></i> <b>Ineligibility Reason:</b> ${(j.reasons || []).join('; ')}</div>` : ''}
+          <div class="flex-between">
+            <span class="text-xs text-slate-400">Required Skills: ${(j.required_skills || []).join(', ')}</span>
+            ${isEligible ?
+              `<button class="btn btn-primary-cyber" onclick="applyToJob(${j.id})">Apply Now</button>` :
+              `<button class="btn btn-outline-cyber opacity-50 cursor-not-allowed" disabled title="${(j.reasons || []).join('; ')}">Not Eligible</button>`
+            }
+          </div>
+        </div>
+      `;
+    }).join('');
+  } catch (err) { console.error(err); }
+}
+
+async function applyToJob(jobId) {
+  try {
+    await apiFetch('/student/apply', {
+      method: 'POST',
+      body: JSON.stringify({ jobId })
+    });
+    alert('Application Submitted Successfully!');
+    navigateTo('student-applications');
+  } catch (err) { alert(err.message); }
+}
+
+async function loadStudentApplications() {
+  try {
+    const apps = await apiFetch('/student/applications');
+    const container = document.getElementById('student-applications-list');
+    if (!container) return;
+
+    container.innerHTML = (apps || []).map(a => `
+      <div class="glass-card-cyber p-4 flex-between">
+        <div>
+          <span class="badge-cyber text-xs uppercase font-bold mb-1">${a.status || 'Applied'}</span>
+          <h4 class="font-bold text-white text-md">${a.jobTitle}</h4>
+          <p class="text-xs text-cyan">${a.companyName} (${a.companyId}) • Applied on ${a.appliedAt}</p>
+        </div>
+        <span class="badge-completed text-xs font-semibold">Stage: ${a.stage}</span>
+      </div>
+    `).join('');
+  } catch (err) { console.error(err); }
+}
+
+// -------------------------------------------------------------
+// INDIVIDUAL COMPANY DASHBOARD WITH 8-STAGE ATS KANBAN PIPELINE
+// -------------------------------------------------------------
+async function loadATSKanbanPipeline() {
+  try {
+    const pipeline = await apiFetch('/company/pipeline');
+    const container = document.getElementById('company-stats-grid');
+    if (!container) return;
+
+    // 8 STAGES AS SPECIFIED
+    const stages = [
+      'Eligible',
+      'Applied',
+      'AI Screening',
+      'Shortlisted',
+      'Technical Interview',
+      'HR Interview',
+      'Selected',
+      'Rejected'
+    ];
+
+    const companyId = currentUser ? currentUser.companyId || 'CMP-10001' : 'CMP-10001';
+
+    container.innerHTML = `
+      <div class="glass-card-cyber p-6 w-full">
+        <div class="flex-between mb-6 border-b-cyber pb-4">
+          <div>
+            <div class="flex-align gap-2 mb-1">
+              <span class="badge-cyber text-xs uppercase font-bold"><i class="fa-solid fa-building mr-1"></i> Isolated Company Dashboard</span>
+              <span class="badge-completed text-xs uppercase font-bold"><i class="fa-solid fa-shield-halved mr-1"></i> companyId: ${companyId}</span>
+            </div>
+            <h3 class="text-2xl font-bold text-white mb-1"><i class="fa-solid fa-network-wired text-cyan mr-2"></i> 8-Stage ATS Candidate Pipeline</h3>
+            <p class="text-xs text-slate-400">Company-specific isolated pipeline. You only see candidates who applied to your company.</p>
+          </div>
+          <button class="btn btn-primary-cyber" onclick="navigateTo('company-jobs')"><i class="fa-solid fa-plus mr-2"></i> Create Requirement</button>
+        </div>
+
+        <div class="pipeline-container-flex flex-between gap-3 overflow-x-auto" style="display: flex; gap: 0.85rem; overflow-x: auto; padding-bottom: 1rem;">
+          ${stages.map(stage => {
+            const candidatesInStage = (pipeline || []).filter(c => c.stage === stage);
+            return `
+              <div class="pipeline-stage-col" style="flex: 1; min-width: 180px;">
+                <div class="flex-between mb-3 border-b-cyber pb-2">
+                  <span class="font-bold text-white text-xs word-break-normal">${stage}</span>
+                  <span class="badge-cyber text-xs font-mono">${candidatesInStage.length}</span>
+                </div>
+                <div class="flex-col gap-2">
+                  ${candidatesInStage.map(c => `
+                    <div class="pipeline-candidate-card">
+                      <div class="flex-between">
+                        <h4 class="font-bold text-white text-xs">${c.name}</h4>
+                        <span class="badge-cyber text-xs font-bold">${c.aiScore}/100</span>
+                      </div>
+                      <p class="text-xs text-cyan font-semibold mb-0.5">${c.department}</p>
+                      <p class="text-xs text-slate-400 mb-1">${c.college} (CGPA: ${c.cgpa})</p>
+                      <p class="text-xs text-emerald mb-2">Match: <b>${c.matchScore}%</b></p>
+                      <select class="cyber-select text-xs w-full word-break-normal" onchange="updateCandidateStage(${c.candidateId}, this.value)">
+                        <option value="${c.stage}" selected>Current: ${c.stage}</option>
+                        ${stages.filter(s => s !== c.stage).map(s => `<option value="${s}">Move to ${s}</option>`).join('')}
+                      </select>
+                    </div>
+                  `).join('')}
+                </div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      </div>
+    `;
+  } catch (err) { console.error(err); }
+}
+
+async function updateCandidateStage(candidateId, newStage) {
+  try {
+    await apiFetch('/company/pipeline/update', {
+      method: 'POST',
+      body: JSON.stringify({ candidateId, newStage })
+    });
+    loadATSKanbanPipeline();
+  } catch (err) { alert(err.message); }
+}
+
+async function submitCompanyJobRequirement() {
+  const reqData = {
+    title: document.getElementById('job-req-title').value,
+    department: document.getElementById('job-req-dept').value,
+    min_cgpa: document.getElementById('job-req-min-cgpa').value,
+    min_ai_score: document.getElementById('job-req-min-ai').value,
+    required_skills: document.getElementById('job-req-skills').value,
+    location: document.getElementById('job-req-location').value,
+    salary_stipend: document.getElementById('job-req-salary').value
+  };
+
+  try {
+    await apiFetch('/company/jobs', {
+      method: 'POST',
+      body: JSON.stringify(reqData)
+    });
+    alert('Recruitment Requirement Published!');
+    navigateTo('company-dashboard');
+  } catch (err) { alert(err.message); }
+}
+
+async function searchCandidates() {
+  try {
+    const candidates = await apiFetch('/company/candidates/matched');
+    const container = document.getElementById('candidate-search-results');
+    if (!container) return;
+
+    container.innerHTML = (candidates || []).map(c => `
+      <div class="glass-card-cyber p-4">
+        <div class="flex-between mb-2">
+          <div>
+            <span class="badge-completed mb-1">Eligible Candidate</span>
+            <h4 class="font-bold text-white text-md">${c.name}</h4>
+          </div>
+          <span class="font-bold text-cyan text-lg">Match: ${c.matchScore}%</span>
+        </div>
+        <p class="text-xs text-slate-300 mb-2"><i class="fa-solid fa-graduation-cap text-cyan mr-1"></i> ${c.college} (CGPA: ${c.gpa})</p>
+        <p class="text-xs text-emerald mb-3">AI Skill Score: <b>${c.aiScore}/100</b></p>
+        <button class="btn btn-sm btn-primary-cyber" onclick="alert('Interview Scheduled for ${c.name}!')">Schedule Interview</button>
+      </div>
+    `).join('');
+  } catch (err) { console.error(err); }
+}
+
+async function loadCollegeAnalytics() {
+  try {
+    const data = await apiFetch('/college/analytics');
+    const container = document.getElementById('college-analytics-container');
+    if (!container) return;
+
+    container.innerHTML = `
+      <div class="glass-card-cyber p-5 mb-4">
+        <div class="flex-between mb-3 border-b-cyber pb-2">
+          <h3 class="font-bold text-2xl text-white"><i class="fa-solid fa-graduation-cap text-emerald mr-2"></i> University Placement Analytics</h3>
+          <span class="font-bold text-emerald text-xl">${data.overallPlacementRate || 89}% Placement Rate</span>
+        </div>
+      </div>
+    `;
+  } catch (err) { console.error(err); }
+}
+
+function openVerifyHash(hash) {
+  window.open(`/verify/${hash || '0x8f9a2b7c4d1e6f3a'}`, '_blank');
+}
+
+function toggleRecruiterCopilot() {
+  const el = document.getElementById('recruiter-copilot-drawer');
+  if (el) el.classList.toggle('hidden');
+}
+
+function closeAuthModal() {
+  document.getElementById('auth-modal').classList.add('hidden');
+}
+
+function handleLogout() {
+  authToken = null; currentUser = null; currentProfile = null;
+  localStorage.removeItem('sb_token');
+  showLandingPage();
+}
+
+function openPublicPortfolio() {
+  window.open('/portfolio/arjun_sharma', '_blank');
+}
