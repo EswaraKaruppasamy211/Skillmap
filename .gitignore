@@ -1,0 +1,23 @@
+﻿# Node modules
+node_modules/
+
+# Logs
+*.log
+backend/server-out.log
+backend/server-err.log
+
+# Databases and secrets
+backend/data.json
+backend/skillmap.db
+*.db
+.env
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# VSCode
+.vscode/
+
+# Temp
+tmp/
