@@ -1,0 +1,393 @@
+Build the Student Module with Login and Registration for my existing SkillBridge AI project.
+
+IMPORTANT:
+
+- Work ONLY inside the current VS Code project.
+- Do NOT create a new project.
+- Do NOT create a new root folder.
+- Do NOT create Faculty, Industry, or Admin modules.
+- First inspect my existing project and understand the current code.
+- Reuse the existing frontend, backend, database, authentication, components, and styling wherever possible.
+- Do not break existing working features.
+- Do not create only mock UI. Make the features functional.
+
+STEP 1 — INSPECT PROJECT
+
+First inspect:
+
+- package.json
+- existing frontend
+- existing backend
+- database
+- authentication
+- routes
+- components
+- existing Student module
+
+Identify what is already implemented and reuse it.
+
+STEP 2 — LOGIN PAGE
+
+Create a professional SkillBridge login page.
+
+Fields:
+
+- Email
+- Password
+- Show/Hide Password
+
+Features:
+
+- Login
+- Forgot Password
+- Create Account
+- Validation
+- Loading state
+- Error messages
+- Success messages
+
+After successful student login:
+
+"/student/dashboard"
+
+Protect all "/student/*" routes.
+
+STEP 3 — STUDENT REGISTRATION
+
+Create a registration page.
+
+Fields:
+
+- Full Name
+- Email
+- Password
+- Confirm Password
+- College
+- Department
+- Year
+- Phone Number
+
+Validate the form and save the student in the existing database.
+
+After successful registration → Login page.
+
+STEP 4 — STUDENT DASHBOARD
+
+Create:
+
+"/student/dashboard"
+
+Display:
+
+- Student name
+- Profile completion
+- Placement readiness score
+- Total skills
+- Certifications
+- Projects
+- Internship applications
+- Job applications
+- Recommended internships
+- Recommended jobs
+- Skill gaps
+- Notifications
+
+Use professional responsive cards and dashboard layout.
+
+STEP 5 — STUDENT PROFILE
+
+Create:
+
+"/student/profile"
+
+Allow students to:
+
+- View profile
+- Edit profile
+- Update college
+- Update department
+- Update year
+- Update phone
+- Add career objective
+
+Save changes to the database.
+
+STEP 6 — SKILLS
+
+Create:
+
+"/student/skills"
+
+Features:
+
+- Add technical skills
+- Add soft skills
+- Skill level
+- Edit skills
+- Delete skills
+
+Example:
+Python, Java, C, SQL, HTML, CSS, JavaScript, React, Communication, Teamwork.
+
+STEP 7 — CERTIFICATIONS
+
+Create:
+
+"/student/certifications"
+
+Allow:
+
+- Add certification
+- Organization
+- Date
+- Credential/link
+- Edit
+- Delete
+
+STEP 8 — PROJECTS
+
+Create:
+
+"/student/projects"
+
+Allow:
+
+- Project title
+- Description
+- Technologies
+- Project link
+- GitHub link
+- Duration
+- Edit
+- Delete
+
+STEP 9 — RESUME
+
+Create:
+
+"/student/resume"
+
+Allow:
+
+- Upload resume
+- View resume
+- Replace resume
+- Delete resume
+
+Add proper file validation.
+
+STEP 10 — SKILL MAPPING
+
+Create:
+
+"/student/skill-mapping"
+
+Display:
+
+- Current skills
+- Strong skills
+- Skills needing improvement
+- Recommended skills
+- Skill score
+
+STEP 11 — SKILL GAP ANALYSIS
+
+Create:
+
+"/student/skill-gap"
+
+Compare student skills with required job/internship skills.
+
+Example:
+
+Student:
+Python, SQL, HTML
+
+Required:
+Python, SQL, React, Java
+
+Display:
+
+Match: 50%
+
+Matching:
+Python, SQL
+
+Missing:
+React, Java
+
+Recommended:
+React, Java
+
+If no external AI API is available, use a reliable rule-based skill matching algorithm.
+
+STEP 12 — INTERNSHIPS
+
+Create:
+
+"/student/internships"
+
+Display:
+
+- Internship title
+- Company
+- Location
+- Duration
+- Required skills
+- Eligibility
+- Deadline
+- Match percentage
+
+Features:
+
+- Search
+- Filter
+- View details
+- Apply
+
+STEP 13 — JOBS / PLACEMENTS
+
+Create:
+
+"/student/jobs"
+
+Display:
+
+- Job title
+- Company
+- Location
+- Required skills
+- Eligibility
+- Salary if available
+- Deadline
+- Match percentage
+
+Features:
+
+- Search
+- Filter
+- View details
+- Apply
+
+STEP 14 — APPLICATIONS
+
+Create:
+
+"/student/applications"
+
+Show:
+
+- Internship applications
+- Job applications
+- Company
+- Position
+- Applied date
+- Status
+
+Statuses:
+
+- Applied
+- Under Review
+- Shortlisted
+- Interview
+- Selected
+- Rejected
+
+STEP 15 — NOTIFICATIONS
+
+Create:
+
+"/student/notifications"
+
+Show:
+
+- Application updates
+- Interview notifications
+- Internship recommendations
+- Job recommendations
+- Skill-gap recommendations
+
+STEP 16 — SIDEBAR
+
+Student sidebar:
+
+Dashboard
+My Profile
+Skills
+Certifications
+Projects
+Resume
+Skill Mapping
+Skill Gap
+Internships
+Jobs / Placements
+Applications
+Notifications
+Logout
+
+STEP 17 — DATABASE
+
+Use the existing database.
+
+If required, create/update models for:
+
+Student
+Skills
+Certifications
+Projects
+Resume
+Internships
+Jobs
+Applications
+Notifications
+
+Student data must persist after refreshing the browser.
+
+STEP 18 — SECURITY
+
+Implement:
+
+- Secure authentication
+- Protected student routes
+- Logout
+- Session/token handling using the existing authentication system
+- Students can only access their own information
+- Never expose passwords, tokens, API keys, or secrets in frontend code
+
+STEP 19 — TEST EVERYTHING
+
+After implementation:
+
+1. Start the application.
+2. Test registration.
+3. Test login.
+4. Test logout.
+5. Test protected routes.
+6. Test profile.
+7. Test skills.
+8. Test certifications.
+9. Test projects.
+10. Test resume.
+11. Test skill mapping.
+12. Test skill gap.
+13. Test internships.
+14. Test job applications.
+15. Test notifications.
+
+Fix all compilation and runtime errors.
+
+IMPORTANT:
+Do not stop after creating the UI.
+Connect frontend + backend + database properly.
+Do not create fake buttons.
+Do not create duplicate projects.
+Do not change the existing project structure unnecessarily.
+
+At the end, show me:
+
+1. Files created/modified
+2. Features completed
+3. Database changes
+4. Exact command to run the project
+5. How to test Student registration and login
+6. Any remaining errors

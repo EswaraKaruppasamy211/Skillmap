@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#f6f5f1" />
+  <title>SkillBridge AI | Career OS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://unpkg.com/lucide-static@0.468.0/font/lucide.css" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <section class="login-screen" id="loginScreen" aria-labelledby="loginTitle">
+    <div class="login-brand"><div class="brand-mark">S</div><span>skillbridge<span class="brand-ai">.ai</span></span></div>
+    <div class="login-layout"><div class="login-intro"><p class="eyebrow"><span class="status-pulse"></span> Your career, in motion</p><h1>Build the career you can see.</h1><p>One focused workspace for skills, opportunities, projects, and the next step that matters.</p><div class="login-proof"><span>78</span><div><strong>placement readiness</strong><small>Personalized for your path</small></div></div></div>
+
+      <form class="login-card" id="loginForm"><p class="eyebrow">Welcome back</p><h2 id="loginTitle">Sign in to SkillBridge</h2><label for="loginEmail">Email address</label><input id="loginEmail" name="email" type="email" autocomplete="email" placeholder="you@example.com" required aria-describedby="loginError"><label for="loginPassword">Password</label><input id="loginPassword" name="password" type="password" autocomplete="current-password" placeholder="Enter your password" required minlength="4" aria-describedby="loginError"><label class="show-password"><input id="showPassword" type="checkbox" aria-label="Show password"> Show password</label><button class="primary-button" type="submit" aria-busy="false">Sign in <i class="icon icon-arrow-right"></i></button><p class="login-error" id="loginError" role="alert" aria-live="assertive" hidden></p><small class="login-hint">Demo account: arjun@skillbridge.ai / skillbridge</small>
+      <p class="login-toggle"><a href="#" id="showRegisterLink" role="button" tabindex="0" aria-controls="registerForm" onclick="document.getElementById('loginForm').hidden=true; document.getElementById('registerForm').hidden=false; document.getElementById('loginError').hidden=true; document.getElementById('registerError').hidden=true; return false;">Don't have an account? Create one</a> · <a href="#" id="showForgotLink" role="button" tabindex="0" aria-controls="forgotForm" onclick="document.getElementById('loginForm').hidden=true; document.getElementById('forgotForm').hidden=false; document.getElementById('loginError').hidden=true; document.getElementById('forgotError').hidden=true; document.getElementById('forgotSuccess').hidden=true; return false;">Forgot password?</a></p>
+      </form>
+
+      <!-- Forgot password form (enter email) -->
+      <form class="login-card" id="forgotForm" hidden>
+      <p class="eyebrow">Reset password</p>
+      <h2 id="forgotTitle">Forgot your password?</h2>
+      <label for="forgotEmail">Enter your account email</label>
+      <input id="forgotEmail" name="email" type="email" autocomplete="email" placeholder="you@example.com" required>
+      <button class="primary-button" type="submit">Send reset token <i class="icon icon-mail"></i></button>
+      <p class="login-error" id="forgotError" role="alert" hidden></p>
+      <p class="login-success" id="forgotSuccess" role="status" hidden></p>
+      <p class="login-toggle"><a href="#" id="showResetLink">I have a reset token</a> · <a href="#" id="showLoginLinkFromForgot">Back to sign in</a></p>
+      </form>
+
+      <!-- Reset password form (token + new password) -->
+      <form class="login-card" id="resetForm" hidden>
+      <p class="eyebrow">Reset password</p>
+      <h2 id="resetTitle">Set a new password</h2>
+      <label for="resetToken">Reset token</label>
+      <input id="resetToken" name="token" type="text" placeholder="Paste token from email" required>
+      <label for="resetPassword">New password</label>
+      <input id="resetPassword" name="password" type="password" placeholder="New password" required minlength="6">
+      <label for="resetConfirm">Confirm password</label>
+      <input id="resetConfirm" name="confirm" type="password" placeholder="Confirm password" required minlength="6">
+      <button class="primary-button" type="submit">Update password <i class="icon icon-check"></i></button>
+      <p class="login-error" id="resetError" role="alert" hidden></p>
+      <p class="login-success" id="resetSuccess" role="status" hidden></p>
+      <p class="login-toggle"><a href="#" id="showLoginLinkFromReset">Back to sign in</a></p>
+      </form>
+
+      <!-- Email verification form (token) -->
+      <form class="login-card" id="verifyForm" hidden>
+      <p class="eyebrow">Email verification</p>
+      <h2 id="verifyTitle">Verify your email</h2>
+      <label for="verifyToken">Verification token</label>
+      <input id="verifyToken" name="token" type="text" placeholder="Paste token from email" required>
+      <button class="primary-button" type="submit">Verify email <i class="icon icon-check-circle"></i></button>
+      <p class="login-error" id="verifyError" role="alert" hidden></p>
+      <p class="login-success" id="verifySuccess" role="status" hidden></p>
+      <p class="login-toggle"><a href="#" id="showLoginLinkFromVerify">Back to sign in</a></p>
+      </form>
+
+      <form class="login-card" id="registerForm" hidden>
+        <p class="eyebrow">Get started</p>
+        <h2 id="registerTitle">Create your account</h2>
+        <label for="registerName">Full name</label>
+        <input id="registerName" name="name" type="text" autocomplete="name" placeholder="Your full name" required>
+        <label for="registerEmail">Email address</label>
+        <input id="registerEmail" name="email" type="email" autocomplete="email" placeholder="you@example.com" required>
+        <label for="registerPassword">Password</label>
+        <input id="registerPassword" name="password" type="password" autocomplete="new-password" placeholder="Create a password" required minlength="4">
+        <label for="registerConfirm">Confirm password</label>
+        <input id="registerConfirm" name="confirm" type="password" autocomplete="new-password" placeholder="Confirm your password" required minlength="4">
+        <label for="registerAccountType">Account type</label>
+        <select id="registerAccountType">
+          <option value="student" selected>Student</option>
+          <option value="industry">Industry (individual)</option>
+          <option value="company">Company (create company account)</option>
+        </select>
+        <label for="registerCompanyName" id="labelRegisterCompanyName" hidden>Company name</label>
+        <input id="registerCompanyName" name="companyName" type="text" placeholder="Company name" hidden>
+        <!-- Student profile fields -->
+        <label for="registerCollege" id="labelRegisterCollege">College / Institute</label>
+        <input id="registerCollege" name="college" type="text" placeholder="Your college or institute">
+        <label for="registerDepartment" id="labelRegisterDepartment">Department</label>
+        <input id="registerDepartment" name="department" type="text" placeholder="Department / Major">
+        <label for="registerYear" id="labelRegisterYear">Year</label>
+        <input id="registerYear" name="year" type="number" min="1" max="10" placeholder="Year of study (e.g. 3)">
+        <label for="registerPhone" id="labelRegisterPhone">Phone</label>
+        <input id="registerPhone" name="phone" type="tel" placeholder="+91 98xxxxxxx">
+        <label class="show-password"><input id="showPasswordRegister" type="checkbox"> Show password</label>
+        <button class="primary-button" type="submit">Create account <i class="icon icon-arrow-right"></i></button>
+        <p class="login-error" id="registerError" role="alert" hidden></p>
+        <p class="login-toggle"><a href="#" id="showLoginLink">Already have an account? Sign in</a></p>
+      </form>
+
+    </div>
+  </section>
+  <div class="app-shell">
+    <aside class="sidebar" id="sidebar">
+      <div class="brand"><div class="brand-mark">S</div><span>skillbridge<span class="brand-ai">.ai</span></span></div>
+      <div class="profile-mini"><div class="avatar">AS</div><div><strong>Arjun Sharma</strong><span>AI Engineer track</span></div><i class="icon icon-chevron-down"></i></div>
+      <nav class="main-nav" aria-label="Main navigation">
+        <p class="nav-label">Workspace</p>
+        <a class="nav-item active" href="#dashboard" data-view="dashboard"><i class="icon icon-layout-dashboard"></i>Dashboard</a>
+        <a class="nav-item" href="#skill-map" data-view="skill-map"><i class="icon icon-network"></i>Skill Map</a>
+        <a class="nav-item" href="#skill-gap" data-view="skill-gap"><i class="icon icon-target"></i>Skill Gap <span class="nav-count">3</span></a>
+        <a class="nav-item" href="#assessment" data-view="assessment"><i class="icon icon-clipboard-check"></i>Assessment</a>
+        <a class="nav-item" href="#jobs" data-view="jobs"><i class="icon icon-briefcase-business"></i>Jobs</a>
+        <a class="nav-item" href="#internships" data-view="internships"><i class="icon icon-graduation-cap"></i>Internships</a>
+        <a class="nav-item" href="#projects" data-view="projects"><i class="icon icon-box"></i>Projects</a>
+        <a class="nav-item" href="#applications" data-view="applications"><i class="icon icon-kanban"></i>Applications</a>
+        <a class="nav-item" href="#interviews" data-view="interviews"><i class="icon icon-mic-2"></i>Interviews</a>
+        <p class="nav-label secondary-label">Grow</p>
+        <a class="nav-item" href="#learning" data-view="learning"><i class="icon icon-book-open"></i>Learning</a>
+        <a class="nav-item" href="#certifications" data-view="certifications"><i class="icon icon-award"></i>Certifications</a>
+        <a class="nav-item" href="#mentorship" data-view="mentorship"><i class="icon icon-users"></i>Mentorship</a>
+        <a class="nav-item" href="#resume" data-view="resume"><i class="icon icon-file-text"></i>Resume Center</a>
+        <a class="nav-item" href="#assistant" data-view="assistant"><i class="icon icon-sparkles"></i>AI Assistant <span class="ai-dot"></span></a>
+      </nav>
+      <div class="sidebar-bottom">      <a class="nav-item" href="#analytics" data-view="analytics"><i class="icon icon-chart-no-axes-combined"></i>Career Analytics</a><a class="nav-item" href="#settings" data-view="settings"><i class="icon icon-settings-2"></i>Settings</a>
+      <!-- Employer nav (hidden for non-industry users) -->
+      <a class="nav-item" href="#employer" data-view="employer" id="employerNavItem" hidden><i class="icon icon-briefcase"></i>Employer</a>
+      <!-- Admin nav (hidden for non-admin users) -->
+      <a class="nav-item" href="#admin" data-view="admin" id="adminNavItem" hidden><i class="icon icon-shield-check"></i>Admin</a>
+      <div class="sidebar-tip"><div class="tip-icon"><i class="icon icon-sparkles"></i></div><strong>Career copilot</strong><span>Ask anything about your next move.</span><button class="tip-button" data-view="assistant">Open assistant <i class="icon icon-arrow-up-right"></i></button></div></div>
+    </aside>
+
+    <main class="main-content">
+      <header class="topbar"><button class="icon-button menu-toggle" id="menuToggle" aria-label="Open navigation"><i class="icon icon-menu"></i></button><div class="breadcrumb"><span>Workspace</span><i class="icon icon-chevron-right"></i><strong id="pageTitle">Dashboard</strong></div><div class="top-actions"><button class="icon-button" aria-label="Search" id="focusSearch"><i class="icon icon-search"></i></button><button class="icon-button notification" id="notificationButton" aria-label="Notifications"><i class="icon icon-bell"></i><span></span></button><div class="top-avatar">AS</div></div></header>
+      <div class="page-wrap">
+        <section class="hero-row"><div><p class="eyebrow"><span class="status-pulse"></span> Monday, 23 August 2026</p><h1>Good morning, Arjun <span class="wave">↗</span></h1><p class="hero-subtitle">Here is your career progress today.</p></div><button class="outline-button" data-view="assistant"><i class="icon icon-sparkles"></i> Ask Career AI</button></section>
+
+        <!-- Employer view (hidden unless industry user) -->
+        <section id="employerView" class="employer-view" hidden>
+          <h2>Employer dashboard</h2>
+          <p>Create job postings and find matched candidates. Prefer high-scoring students in matches.</p>
+          <form id="createJobForm" class="create-job-form">
+            <label for="jobTitle">Job title</label>
+            <input id="jobTitle" required>
+            <label for="jobCompany">Company</label>
+            <input id="jobCompany" required>
+            <label for="jobDescription">Description</label>
+            <textarea id="jobDescription"></textarea>
+            <label for="jobMinScore">Minimum candidate score</label>
+            <input id="jobMinScore" type="number" min="0" max="100" value="50">
+            <button class="primary-button" type="submit">Create job</button>
+          </form>
+          <h3>Your jobs</h3>
+          <div id="employerJobList"></div>
+        </section>
+
+        <!-- Admin view (hidden unless user is admin) -->
+        <section id="adminView" class="admin-view" hidden>
+          <h2>Admin: User Management</h2>
+          <p>Manage registered users, promote to admin, edit profiles, reset passwords, and review audit logs.</p>
+          <div class="admin-tabs">
+            <button class="tab-button" data-admin-tab="users">Users</button>
+            <button class="tab-button" data-admin-tab="deleted">Deleted</button>
+            <button class="tab-button" data-admin-tab="audit">Audit</button>
+            <button class="tab-button" data-admin-tab="emails">Emails</button>
+            <button class="tab-button" data-admin-tab="invites">Invites</button>
+          </div>
+          <div class="admin-controls"><input type="text" id="adminFilter" placeholder="Filter users by email or name"><button id="adminRefresh" class="text-button">Refresh</button> <button id="adminRecomputeAll" class="text-button">Recompute all skill scores</button></div>
+
+          <div id="adminUsersPanel" class="admin-panel">
+            <div id="adminUserList" class="admin-user-list"></div>
+          </div>
+
+          <div id="adminDeletedPanel" class="admin-panel" hidden>
+            <div><button id="adminRefreshDeleted" class="text-button">Refresh deleted list</button></div>
+            <div id="adminDeletedList" class="admin-deleted-list"></div>
+          </div>
+
+          <div id="adminAuditPanel" class="admin-panel" hidden>
+            <div><button id="adminRefreshAudit" class="text-button">Refresh audit</button></div>
+            <div id="adminAuditList" class="admin-audit-list"></div>
+          </div>
+
+          <div id="adminEmailsPanel" class="admin-panel" hidden>
+            <div class="admin-email-controls"><button id="adminRefreshEmails" class="text-button">Refresh queue</button> <button id="adminRefreshOffers" class="text-button">Refresh offers</button></div>
+            <h4>Email queue</h4>
+            <div id="adminEmailQueueList" class="admin-email-list"></div>
+            <h4>Offers (all users)</h4>
+            <div id="adminOffersList" class="admin-offers-list"></div>
+            <h4>SMTP settings</h4>
+            <form id="adminSmtpForm" class="smtp-form">
+              <label>Host</label><input id="smtpHost">
+              <label>Port</label><input id="smtpPort" type="number">
+              <label>User</label><input id="smtpUser">
+              <label>Pass</label><input id="smtpPass" type="password">
+              <label>From</label><input id="smtpFrom">
+              <label>Retries</label><input id="smtpRetries" type="number" min="1">
+              <label>Retry delay (ms)</label><input id="smtpRetryDelay" type="number" min="100">
+              <div class="modal-actions"><button type="button" class="primary-button" id="adminSmtpSave">Save SMTP</button> <button type="button" class="text-button" id="adminSmtpClear">Clear</button></div>
+            </form>
+          </div>
+
+          <div id="adminInvitesPanel" class="admin-panel" hidden>
+            <div class="admin-invite-controls"><button id="adminRefreshInvites" class="text-button">Refresh invites</button></div>
+            <h4>Company invites</h4>
+            <div id="adminInvitesList" class="admin-invites-list"></div>
+          </div>
+
+          <!-- Modal for editing user or resetting password -->
+          <div id="adminModal" class="modal" hidden>
+            <div class="modal-content">
+              <button class="modal-close" id="adminModalClose">✕</button>
+              <h3 id="adminModalTitle">Edit user</h3>
+              <form id="adminModalForm">
+                <input type="hidden" id="adminModalEmail">
+                <label for="adminModalName">Full name</label>
+                <input id="adminModalName" required>
+                <label for="adminModalPassword">New password (leave blank to keep)</label>
+                <input id="adminModalPassword" type="password" minlength="6">
+                <div class="modal-actions"><button type="submit" class="primary-button">Save</button> <button type="button" class="text-button" id="adminModalCancel">Cancel</button></div>
+              </form>
+            </div>
+          </div>
+
+          <!-- Modal for confirming admin actions (re-sends, destructive actions) -->
+          <div id="adminConfirmModal" class="modal" hidden>
+            <div class="modal-content">
+              <button class="modal-close" id="adminConfirmClose">✕</button>
+              <h3 id="adminConfirmTitle">Confirm action</h3>
+              <div id="adminConfirmBody"><p id="adminConfirmMessage">Are you sure?</p></div>
+              <div class="modal-actions"><button type="button" class="primary-button" id="adminConfirmOk">Confirm</button> <button type="button" class="text-button" id="adminConfirmCancel">Cancel</button></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="metric-grid" aria-label="Career metrics">
+          <article class="metric-card readiness"><div class="metric-top"><span class="metric-label">Placement readiness</span><i class="icon icon-arrow-up-right"></i></div><div class="metric-value">78<span>/100</span></div><div class="metric-footer"><span class="pill amber"><i class="icon icon-circle-alert"></i> Almost ready</span><button class="text-button" data-view="skill-gap">Improve score <i class="icon icon-arrow-up-right"></i></button></div><div class="progress-track"><div style="width:78%"></div></div></article>
+          <article class="metric-card fit"><div class="metric-top"><span class="metric-label">Skill-fit</span><i class="icon icon-chart-no-axes-combined"></i></div><div class="metric-value">86<span>%</span></div><div class="metric-footer"><span class="muted">For AI Engineer</span><button class="text-button" data-view="skill-map">View analysis <i class="icon icon-arrow-up-right"></i></button></div><div class="fit-bar"><span style="width:86%"></span></div></article>
+          <article class="metric-card strength"><div class="metric-top"><span class="metric-label">Profile strength</span><i class="icon icon-user-round-check"></i></div><div class="metric-value">92<span>%</span></div><div class="metric-footer"><span class="pill green"><i class="icon icon-check"></i> Strong profile</span><button class="text-button" data-view="resume">Complete profile <i class="icon icon-arrow-up-right"></i></button></div><div class="progress-track"><div style="width:92%"></div></div></article>
+          <article class="metric-card goal"><div class="metric-top"><span class="metric-label">Current career goal</span><i class="icon icon-crosshair"></i></div><div class="goal-value">AI Engineer</div><div class="metric-footer"><span class="muted">Targeting 2026 roles</span><button class="text-button" id="changeGoal">Change goal <i class="icon icon-arrow-up-right"></i></button></div><div class="goal-tags"><span>ML</span><span>Python</span><span>Cloud</span></div></article>
+        </section>
+
+        <section class="content-grid">
+          <div class="primary-column">
+            <article class="next-action"><div class="action-orbit"><i class="icon icon-sparkles"></i></div><div class="action-copy"><p class="eyebrow light">Your next best action</p><h2>Deployment is your unlock.</h2><p>You are strong in Python and Machine Learning. AI Engineer roles you want frequently require production deployment skills.</p><div class="action-meta"><span><i class="icon icon-clock-3"></i> 2-3 weeks</span><span><i class="icon icon-trending-up"></i> High impact</span></div><button class="primary-button" data-view="learning">Start learning <i class="icon icon-arrow-up-right"></i></button></div><div class="action-art"><div class="code-window"><div class="code-dots"><b></b><b></b><b></b></div><code><span class="code-purple">from</span> fastapi <span class="code-purple">import</span> FastAPI<br><br>app = FastAPI()<br><br><span class="code-purple">@app.get</span>(<span class="code-green">"/predict"</span>)<br><span class="code-purple">def</span> <span class="code-yellow">predict</span>():<br>&nbsp;&nbsp;<span class="code-purple">return</span> { <span class="code-green">"ready"</span>: <span class="code-blue">True</span> }</code></div></div></article>
+            <div class="section-heading"><div><p class="eyebrow">AI matched opportunities</p><h2>Recommended for you</h2></div><button class="link-button" data-view="jobs">View all opportunities <i class="icon icon-arrow-up-right"></i></button></div>
+            <div class="opportunity-list" id="dashboardOpportunities"></div>
+          </div>
+          <aside class="secondary-column">
+            <article class="journey-card"><div class="section-heading compact"><div><p class="eyebrow">Your journey</p><h2>Career progress</h2></div><button class="icon-button small" aria-label="More options"><i class="icon icon-ellipsis"></i></button></div><div class="journey"><div class="journey-item done"><span class="journey-node"><i class="icon icon-check"></i></span><div><strong>Profile</strong><small>Complete</small></div></div><div class="journey-line"></div><div class="journey-item done"><span class="journey-node"><i class="icon icon-check"></i></span><div><strong>Skills</strong><small>Verified</small></div></div><div class="journey-line"></div><div class="journey-item done"><span class="journey-node"><i class="icon icon-check"></i></span><div><strong>Assessment</strong><small>Complete</small></div></div><div class="journey-line"></div><div class="journey-item current"><span class="journey-node">4</span><div><strong>Projects</strong><small>1 of 2 complete</small></div></div><div class="journey-line"></div><div class="journey-item"><span class="journey-node">5</span><div><strong>Interview</strong><small>Up next</small></div></div><div class="journey-line"></div><div class="journey-item"><span class="journey-node">6</span><div><strong>Placement</strong><small>Goal</small></div></div></div><button class="subtle-button" data-view="skill-map">View full journey <i class="icon icon-arrow-right"></i></button></article>
+            <article class="gap-card"><div class="section-heading compact"><div><p class="eyebrow">Focus area</p><h2>Skill gaps</h2></div><span class="gap-count">3 gaps</span></div><div id="dashboardGapRows"></div><button class="subtle-button" data-view="skill-gap">See skill gap plan <i class="icon icon-arrow-right"></i></button></article>
+            <article class="streak-card"><div class="streak-icon"><i class="icon icon-flame"></i></div><div><strong>5 day streak</strong><p>Keep your momentum going.</p></div><span class="streak-dots"><i></i><i></i><i></i><i></i><i class="today"></i><i></i><i></i></span></article>
+          </aside>
+        </section>
+      </div>
+      <section class="jobs-view" id="jobsView" aria-labelledby="jobsTitle" hidden>
+        <div class="jobs-heading"><div><p class="eyebrow">AI matched opportunities · India</p><h1 id="jobsTitle">Find your next role</h1><p>Search India-based roles aligned with your current skills and career goal.</p></div><button class="outline-button" data-view="dashboard"><i class="icon icon-arrow-left"></i> Back to dashboard</button></div>
+        <div class="jobs-toolbar"><label class="jobs-search"><i class="icon icon-search"></i><input id="jobSearch" type="search" placeholder="Search title, company, or skill" /></label><select id="jobType" aria-label="Filter by opportunity type"><option value="all">All opportunities</option><option value="FULL-TIME JOB">Full-time jobs</option><option value="INTERNSHIP">Internships</option></select><select id="jobCity" aria-label="Filter by city"><option value="all">All India</option><option value="Bengaluru">Bengaluru</option><option value="Chennai">Chennai</option><option value="Hyderabad">Hyderabad</option><option value="Pune">Pune</option><option value="Remote">Remote</option></select><select id="jobSort" aria-label="Sort opportunities"><option value="match">Best match</option><option value="title">Title A-Z</option></select></div>
+        <div class="jobs-results" id="jobsResults"></div>
+      </section>
+      <section class="applications-view" id="applicationsView" aria-labelledby="applicationsTitle" hidden>
+        <div class="jobs-heading"><div><p class="eyebrow">Your pipeline</p><h1 id="applicationsTitle">Application tracker</h1><p>Keep every opportunity moving toward your next role.</p></div><div class="heading-actions"><button class="outline-button" data-view="jobs"><i class="icon icon-search"></i> Find a role</button><button class="primary-button" id="addApplication"><i class="icon icon-plus"></i> Add application</button></div></div>
+        <div class="application-toolbar"><label class="jobs-search"><i class="icon icon-search"></i><input id="applicationSearch" type="search" placeholder="Search role or company" /></label><select id="applicationStatus" aria-label="Filter applications by status"><option value="all">All stages</option><option>Saved</option><option>Applied</option><option>Interview</option><option>Offer</option></select></div>
+        <div class="application-stats" id="applicationStats"></div>
+        <div class="application-board" id="applicationBoard"></div>
+      </section>
+      <section class="skill-gap-view" id="skillGapView" aria-labelledby="skillGapTitle" hidden>
+        <div class="jobs-heading"><div><p class="eyebrow">Your development plan</p><h1 id="skillGapTitle">Close your skill gaps</h1><p>Small, focused wins that move your placement readiness forward.</p></div><button class="outline-button" data-view="learning"><i class="icon icon-book-open"></i> Browse learning</button></div>
+        <div class="gap-plan-grid" id="gapPlanGrid"></div>
+      </section>
+      <section class="resume-view" id="resumeView" aria-labelledby="resumeTitle" hidden>
+        <div class="jobs-heading"><div><p class="eyebrow">Your professional profile</p><h1 id="resumeTitle">Resume Center</h1><p>Polish the details that help your next application stand out.</p></div><button class="primary-button" id="downloadResume"><i class="icon icon-download"></i> Export resume</button></div>
+        <div class="resume-layout"><article class="resume-score"><span class="resume-ring" id="resumeRing">60%</span><h2>Profile strength</h2><p>Complete the remaining items to reach a standout profile.</p><div class="progress-track"><div id="resumeProgress"></div></div></article><article class="resume-checklist"><div class="section-heading compact"><div><p class="eyebrow">Profile checklist</p><h2>Ready for review</h2></div><span id="resumeCount" class="gap-count"></span></div><div id="resumeItems"></div></article></div>
+      </section>
+      <section class="interview-view" id="interviewView" aria-labelledby="interviewTitle" hidden>
+        <div class="jobs-heading"><div><p class="eyebrow">Practice with purpose</p><h1 id="interviewTitle">Interview Prep</h1><p>Build clear, confident answers for your next AI Engineer interview.</p></div><span class="interview-badge"><i class="icon icon-sparkles"></i> AI coaching</span></div>
+        <article class="interview-card"><div class="question-meta"><span id="questionCategory">Technical</span><span>Question of the day</span></div><h2 id="interviewQuestion">Loading your question...</h2><form id="interviewForm"><label for="interviewAnswer">Your answer</label><textarea id="interviewAnswer" rows="7" placeholder="Explain your approach, tools, and expected result..."></textarea><div class="interview-footer"><button class="text-button" id="newQuestion" type="button"><i class="icon icon-refresh-cw"></i> New question</button><button class="primary-button" type="submit">Get feedback <i class="icon icon-arrow-up-right"></i></button></div></form><div class="interview-feedback" id="interviewFeedback" aria-live="polite" hidden></div></article>
+      </section>
+      <section class="learning-view" id="learningView" aria-labelledby="learningTitle" hidden>
+        <div class="jobs-heading"><div><p class="eyebrow">Build the unlock</p><h1 id="learningTitle">Learning Hub</h1><p>Focused lessons for the skills employers are asking you for.</p></div><span class="interview-badge"><i class="icon icon-zap"></i> 3 active paths</span></div>
+        <div class="learning-grid" id="learningGrid"></div>
+      </section>
+      <section class="certifications-view" id="certificationsView" aria-labelledby="certificationsTitle" hidden><div class="jobs-heading"><div><p class="eyebrow">Signals employers trust</p><h1 id="certificationsTitle">Certifications</h1><p>Choose credentials that reinforce the skills behind your target role.</p></div><span class="interview-badge"><i class="icon icon-award"></i> Career proof</span></div><div class="certification-grid" id="certificationGrid"></div></section>
+      <section class="assessment-view" id="assessmentView" aria-labelledby="assessmentTitle" hidden><div class="jobs-heading"><div><p class="eyebrow">Know your baseline</p><h1 id="assessmentTitle">Career Assessment</h1><p>Check the fundamentals behind your target role in three quick questions.</p></div><span class="interview-badge"><i class="icon icon-clipboard-check"></i> 3 questions</span></div><form class="assessment-card" id="assessmentForm"><div id="assessmentQuestions"></div><div class="assessment-actions"><button class="text-button" id="retakeAssessment" type="button"><i class="icon icon-refresh-cw"></i> Retake</button><button class="primary-button" type="submit">Submit assessment <i class="icon icon-arrow-up-right"></i></button></div></form><div class="assessment-result" id="assessmentResult" hidden></div></section>
+      <section class="mentorship-view" id="mentorshipView" aria-labelledby="mentorshipTitle" hidden>
+        <div class="jobs-heading"><div><p class="eyebrow">Guidance for the next step</p><h1 id="mentorshipTitle">Find a mentor</h1><p>Learn from people who have already built the career you are working toward.</p></div><span class="interview-badge"><i class="icon icon-users"></i> Curated for you</span></div>
+        <div class="mentor-grid" id="mentorGrid"></div>
+      </section>
+      <section class="analytics-view" id="analyticsView" aria-labelledby="analyticsTitle" hidden>
+        <div class="jobs-heading"><div><p class="eyebrow">Measure what matters</p><h1 id="analyticsTitle">Career Analytics</h1><p>See where your effort is translating into placement readiness.</p></div><span class="interview-badge"><i class="icon icon-trending-up"></i> Trending upward</span></div>
+        <div class="analytics-grid"><article class="analytics-card breakdown-card"><div class="section-heading compact"><div><p class="eyebrow">Readiness breakdown</p><h2>Strength by area</h2></div></div><div id="analyticsBreakdown"></div></article><article class="analytics-card"><div class="section-heading compact"><div><p class="eyebrow">Weekly momentum</p><h2>Activity score</h2></div><span class="gap-count">Last 7 days</span></div><div class="momentum-chart" id="momentumChart"></div><div class="chart-days"><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span></div></article></div><article class="analytics-recommendation"><i class="icon icon-sparkles"></i><div><p class="eyebrow">Your next insight</p><strong id="analyticsRecommendation"></strong></div></article>
+      </section>
+      <section class="skill-map-view" id="skillMapView" aria-labelledby="skillMapTitle" hidden>
+        <div class="jobs-heading"><div><p class="eyebrow">Your capability network</p><h1 id="skillMapTitle">Skill Map</h1><p>See what is strong, what is developing, and what unlocks your target role.</p></div><span class="interview-badge"><i class="icon icon-network"></i> AI Engineer path</span></div>
+        <div class="skill-map-layout"><article class="skill-map-card"><div class="map-legend"><span><i class="legend-dot core"></i>Core</span><span><i class="legend-dot developing"></i>Developing</span><span><i class="legend-dot target"></i>Target</span></div><div class="skill-nodes" id="skillNodes"></div></article><article class="skill-detail" id="skillDetail"><i class="icon icon-mouse-pointer-click"></i><h2>Select a skill</h2><p>Choose a node to see your next best move.</p></article></div>
+      </section>
+      <section class="projects-view" id="projectsView" aria-labelledby="projectsTitle" hidden>
+        <div class="jobs-heading"><div><p class="eyebrow">Proof of your progress</p><h1 id="projectsTitle">Project portfolio</h1><p>Build visible evidence for the skills you want employers to notice.</p></div><span class="interview-badge"><i class="icon icon-box"></i> 1 of 2 complete</span></div>
+        <div class="project-grid" id="projectGrid"></div>
+      </section>
+      <section class="settings-view" id="settingsView" aria-labelledby="settingsTitle" hidden>
+        <div class="jobs-heading"><div><p class="eyebrow">Make it yours</p><h1 id="settingsTitle">Settings</h1><p>Manage your profile and choose how SkillBridge keeps you moving.</p></div></div>
+        <div class="settings-layout"><article class="settings-card"><p class="eyebrow">Profile</p><div class="settings-profile"><div class="top-avatar">AS</div><div><h2 id="settingsName">Arjun Sharma</h2><p id="settingsTrack">AI Engineer track</p></div></div><form id="profileForm"><label class="profile-label" for="profileName">Full name</label><input class="profile-input" id="profileName" required><label class="profile-label" for="profileTrack">Career track</label><input class="profile-input" id="profileTrack" required>
+          <label class="profile-label" for="profileCollege">College / Institute</label><input class="profile-input" id="profileCollege">
+          <label class="profile-label" for="profileDepartment">Department / Major</label><input class="profile-input" id="profileDepartment">
+          <label class="profile-label" for="profileYear">Year</label><input class="profile-input" id="profileYear" type="number" min="1" max="10">
+          <label class="profile-label" for="profilePhone">Phone</label><input class="profile-input" id="profilePhone" type="tel">
+          <button class="primary-button" type="submit"><i class="icon icon-user-round-pen"></i> Update profile</button></form><div class="settings-field"><label>Career goal</label><strong id="settingsGoal">AI Engineer</strong></div><button class="signout-button" id="signOut" type="button"><i class="icon icon-log-out"></i> Sign out</button></article><article class="settings-card"><p class="eyebrow">Notifications</p><div id="notificationSettings"></div><button class="primary-button" id="saveSettings"><i class="icon icon-save"></i> Save preferences</button></article></div>
+      </section>
+    </main>
+    <nav class="mobile-nav"><a class="active" href="#dashboard" data-view="dashboard"><i class="icon icon-house"></i><span>Home</span></a><a href="#jobs" data-view="jobs"><i class="icon icon-briefcase-business"></i><span>Jobs</span></a><a href="#applications" data-view="applications"><i class="icon icon-kanban"></i><span>Applications</span></a><a href="#assistant" data-view="assistant"><i class="icon icon-sparkles"></i><span>AI</span></a><a href="#profile" data-view="resume"><i class="icon icon-user-round"></i><span>Profile</span></a></nav>
+  </div>
+  <section class="assistant-panel" id="assistantPanel" aria-labelledby="assistantTitle" aria-hidden="true">
+    <div class="assistant-header"><div><p class="eyebrow">Career copilot</p><h2 id="assistantTitle">Ask Career AI</h2></div><button class="icon-button small" id="closeAssistant" aria-label="Close assistant"><i class="icon icon-x"></i></button></div>
+    <p class="assistant-intro">Get a focused next step for your AI Engineer journey.</p>
+    <div class="assistant-suggestions"><button type="button" data-question="What should I learn next?">What should I learn next?</button><button type="button" data-question="How can I improve my readiness?">Improve my readiness</button></div>
+    <form class="assistant-form" id="assistantForm"><label for="assistantQuestion">Your question</label><div class="assistant-input"><input id="assistantQuestion" name="question" autocomplete="off" placeholder="Ask about skills, jobs, or projects" required /><button class="primary-button" type="submit" aria-label="Send question"><i class="icon icon-arrow-up"></i></button></div></form>
+    <div class="assistant-answer" id="assistantAnswer" aria-live="polite">Your answer will appear here.</div>
+  </section>
+  <section class="notification-panel" id="notificationPanel" aria-labelledby="notificationTitle" aria-hidden="true"><div class="notification-header"><h2 id="notificationTitle">Notifications</h2><button class="text-button" id="markNotificationsRead">Mark all read</button></div><div id="notificationList"></div></section>
+  <section class="search-panel" id="searchPanel" aria-labelledby="searchTitle" aria-hidden="true"><div class="search-header"><h2 id="searchTitle">Search your workspace</h2><button class="icon-button small" id="closeSearch" aria-label="Close search"><i class="icon icon-x"></i></button></div><label class="global-search"><i class="icon icon-search"></i><input id="globalSearch" type="search" placeholder="Try FastAPI, Python, or AI Engineer" autocomplete="off" /></label><div class="search-results" id="searchResults"><p>Start typing to search roles and skills.</p></div></section>
+  <section class="goal-panel" id="goalPanel" aria-labelledby="goalTitle" aria-hidden="true"><div class="search-header"><h2 id="goalTitle">Choose your career goal</h2><button class="icon-button small" id="closeGoal" aria-label="Close goal editor"><i class="icon icon-x"></i></button></div><p>We will tailor your recommendations around this direction.</p><div class="goal-options" id="goalOptions"></div></section>
+  <section class="role-panel" id="rolePanel" aria-labelledby="roleTitle" aria-hidden="true"><div class="search-header"><span class="type-label">Role details</span><button class="icon-button small" id="closeRole" aria-label="Close role details"><i class="icon icon-x"></i></button></div><h2 id="roleTitle"></h2><p id="roleCompany"></p><div class="role-match" id="roleMatch"></div><p class="role-description">This opportunity aligns with your current career goal and highlights skills already present in your profile.</p><div class="chips" id="roleSkills"></div><button class="primary-button" id="saveRole"><i class="icon icon-bookmark"></i> Save to Applications</button></section>
+  <section class="add-application-panel" id="addApplicationPanel" aria-labelledby="addApplicationTitle" aria-hidden="true"><div class="search-header"><h2 id="addApplicationTitle">Add application</h2><button class="icon-button small" id="closeAddApplication" aria-label="Close add application"><i class="icon icon-x"></i></button></div><form id="addApplicationForm"><label for="newRole">Role title</label><input id="newRole" required placeholder="e.g. AI Engineer"><label for="newCompany">Company</label><input id="newCompany" required placeholder="e.g. Acme Labs"><button class="primary-button" type="submit"><i class="icon icon-plus"></i> Add to Saved</button></form></section>
+  <div class="toast" id="toast"><i class="icon icon-sparkles"></i><span>Career AI is preparing your view...</span></div>
+  <script src="app.js"></script>
+</body>
+</html>

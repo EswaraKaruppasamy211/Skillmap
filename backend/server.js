@@ -1,0 +1,2203 @@
+const http = require('http');
+const fs = require('fs');
+const path = require('path');
+const crypto = require('crypto');
+const { URL } = require('url');
+
+const port = Number(process.env.PORT) || 3000;
+const serverDir = __dirname;
+const repoRoot = path.resolve(serverDir, '..');
+const dataFile = path.join(serverDir, 'data.json');
+const authUser = { email: 'arjun@skillbridge.ai', password: 'skillbridge', name: 'Persistent User' };
+
+// Password hashing helpers using Node's built-in crypto (scrypt)
+function hashPassword(password) {
+  const salt = crypto.randomBytes(16).toString('hex');
+  const derived = crypto.scryptSync(password, salt, 64).toString('hex');
+  return { salt, hash: derived };
+}
+function verifyPassword(password, salt, hash) {
+  const derived = crypto.scryptSync(password, salt, 64).toString('hex');
+  return crypto.timingSafeEqual(Buffer.from(derived, 'hex'), Buffer.from(hash, 'hex'));
+}
+
+const dashboard = {
+  user: { name: 'Arjun Sharma', track: 'AI Engineer track' },
+  metrics: { readiness: 78, fit: 86, profile: 92 },
+  goal: 'AI Engineer',
+  gaps: [
+    { name: 'FastAPI', progress: 35 },
+    { name: 'Docker', progress: 30 },
+    { name: 'Deep Learning', progress: 55 }
+  ],
+  opportunities: [
+    { type: 'FULL-TIME JOB', title: 'Junior AI Engineer', company: 'ABC Technologies', location: 'Chennai / Remote', match: 92, skills: ['Python', 'Machine Learning', 'FastAPI'] },
+    { type: 'INTERNSHIP', title: 'Machine Learning Intern', company: 'XYZ Labs', location: 'Remote · India', match: 89, skills: ['Python', 'TensorFlow', 'SQL'] },
+    { type: 'FULL-TIME JOB', title: 'Applied AI Engineer', company: 'Vertex Innovations', location: 'Bengaluru / Hybrid', match: 88, skills: ['Python', 'LLMs', 'Docker'] },
+    { type: 'FULL-TIME JOB', title: 'MLOps Associate', company: 'CloudKraft India', location: 'Hyderabad / Remote', match: 84, skills: ['AWS', 'Docker', 'CI/CD'] },
+    { type: 'INTERNSHIP', title: 'Data Science Intern', company: 'Pune Data Works', location: 'Pune / Hybrid', match: 81, skills: ['Python', 'SQL', 'Statistics'] }
+  ]
+};
+
+let savedState = {};
+if (fs.existsSync(dataFile)) {
+  try { savedState = JSON.parse(fs.readFileSync(dataFile, 'utf8')); } catch { savedState = {}; }
+}
+// ensure smtp and emailQueue exist on savedState for later use
+savedState.smtp = savedState.smtp || null;
+savedState.emailQueue = savedState.emailQueue || [];
+savedState.companies = savedState.companies || [];
+savedState.companyInvites = savedState.companyInvites || [];
+// password reset and email verification stores
+savedState.passwordResets = savedState.passwordResets || [];
+savedState.emailVerifications = savedState.emailVerifications || [];
+// token secret for hashing one-time tokens (invite/reset/verify)
+savedState.tokenSecret = savedState.tokenSecret || null;
+if (!savedState.tokenSecret) { try { savedState.tokenSecret = crypto.randomBytes(32).toString('hex'); fs.writeFileSync(dataFile, JSON.stringify(Object.assign({}, savedState, { users: savedState.users || [], jwtSecret: savedState.jwtSecret || null }), null, 2)); } catch (e) { /* ignore */ } }
+function hashToken(t) { try { return crypto.createHmac('sha256', savedState.tokenSecret || '').update(String(t)).digest('hex'); } catch (e) { return null; } }
+let jwtSecret = savedState.jwtSecret || null;
+const users = savedState.users || [];
+// Sqlite DB for persistent scoring and lookups (created if missing)
+let db = null;
+try { db = require('./db'); } catch (e) { /* If DB module missing, fall back to in-memory only */ }
+// If db is async module, ensure init is triggered
+if (db && typeof db.init === 'function') {
+  db.init().catch((e)=>{ console.error('DB init failed:', e && e.message); });
+}
+// audit logs and soft-deleted users store
+const auditLogs = savedState.auditLogs || [];
+const deletedUsers = savedState.deletedUsers || {};
+
+const certificationsDefault = [
+  { id: 1, name: 'AWS Cloud Practitioner', provider: 'Amazon Web Services', relevance: 'Cloud deployment', status: 'Recommended' },
+  { id: 2, name: 'TensorFlow Developer Certificate', provider: 'TensorFlow', relevance: 'Deep Learning', status: 'In progress' },
+  { id: 3, name: 'Docker Foundations', provider: 'Docker', relevance: 'Production APIs', status: 'Planned' }
+];
+const assessmentQuestions = [
+  { id: 1, prompt: 'Which tool is best suited to expose a model prediction endpoint?', options: ['FastAPI', 'Figma', 'Excel'], answer: 'FastAPI' },
+  { id: 2, prompt: 'What does Docker primarily package for deployment?', options: ['Containers', 'Spreadsheets', 'Design files'], answer: 'Containers' },
+  { id: 3, prompt: 'Which metric is useful when evaluating a classification model?', options: ['F1 score', 'Font size', 'Screen width'], answer: 'F1 score' }
+];
+
+// Map assessment question ids to skill names (used to produce per-skill assessment components)
+const assessmentQuestionSkillMap = {
+  1: ['FastAPI'],
+  2: ['Docker'],
+  3: ['Machine Learning']
+};
+
+
+const skillGaps = dashboard.gaps.map((gap, index) => ({ ...gap, id: index + 1, focus: index === 0 ? 'Build a prediction API with FastAPI.' : index === 1 ? 'Containerize your API and deploy it.' : 'Train and evaluate a neural network.' }));
+const resumeChecklist = [
+  { id: 1, label: 'Contact details', detail: 'Email, phone, and location', complete: true },
+  { id: 2, label: 'Professional summary', detail: 'A clear AI Engineer introduction', complete: true },
+  { id: 3, label: 'Technical skills', detail: 'Python, ML, and deployment tools', complete: true },
+  { id: 4, label: 'Featured projects', detail: 'Add one production-ready project', complete: false },
+  { id: 5, label: 'Resume PDF', detail: 'Upload your latest tailored resume', complete: false }
+];
+const interviewQuestions = [
+  { id: 1, category: 'Technical', prompt: 'How would you deploy a machine learning model as a production API?' },
+  { id: 2, category: 'Behavioral', prompt: 'Tell me about a project where you solved a difficult technical problem.' }
+];
+const learningResources = [
+  { id: 1, skill: 'FastAPI', title: 'Production APIs with FastAPI', meta: '6 lessons · 2 hours', progress: 20, color: 'green' },
+  { id: 2, skill: 'Docker', title: 'Ship your first ML service', meta: '8 lessons · 3 hours', progress: 0, color: 'coral' },
+  { id: 3, skill: 'Deep Learning', title: 'Neural networks, clearly explained', meta: '10 lessons · 4 hours', progress: 60, color: 'yellow' }
+];
+const mentors = [
+  { id: 1, name: 'Meera Iyer', role: 'Staff ML Engineer', company: 'Orbit Labs', focus: 'ML systems · Career strategy', availability: '2 spots this month', initials: 'MI' },
+  { id: 2, name: 'Rohan Mehta', role: 'Platform Engineer', company: 'Cloudscale', focus: 'APIs · Docker · Cloud', availability: 'Available this week', initials: 'RM' },
+  { id: 3, name: 'Ananya Rao', role: 'AI Product Lead', company: 'Northstar AI', focus: 'Portfolio · Interview prep', availability: '1 spot this month', initials: 'AR' }
+];
+
+const analytics = {
+  breakdown: [
+    { label: 'Technical skills', value: 86, color: 'green' },
+    { label: 'Profile strength', value: 92, color: 'coral' },
+    { label: 'Interview readiness', value: 64, color: 'yellow' },
+    { label: 'Application momentum', value: 58, color: 'navy' }
+  ],
+  weekly: [42, 56, 48, 72, 61, 84, 78],
+  recommendation: 'Complete one Docker project and two interview answers this week to move toward 85 readiness.'
+};
+const skillMap = [
+  { id: 1, name: 'Python', level: 92, group: 'Core', next: 'Build a typed service with tests.' },
+  { id: 2, name: 'Machine Learning', level: 84, group: 'Core', next: 'Compare three model approaches on one dataset.' },
+  { id: 3, name: 'FastAPI', level: 35, group: 'Developing', next: 'Create a /predict endpoint.' },
+  { id: 4, name: 'Docker', level: 30, group: 'Developing', next: 'Containerize your ML service.' },
+  { id: 5, name: 'Cloud deployment', level: 18, group: 'Target', next: 'Deploy a container with health checks.' },
+  { id: 6, name: 'Deep Learning', level: 55, group: 'Developing', next: 'Train and evaluate a neural network.' }
+];
+const projects = [
+  { id: 1, title: 'Customer churn predictor', description: 'A tested ML service that predicts customer risk from product activity.', skills: ['Python', 'Scikit-learn'], status: 'Complete' },
+  { id: 2, title: 'Production prediction API', description: 'Deploy a model with FastAPI, Docker, health checks, and clear documentation.', skills: ['FastAPI', 'Docker'], status: 'In progress' },
+  { id: 3, title: 'Neural image classifier', description: 'Train, evaluate, and explain a neural network on a real dataset.', skills: ['PyTorch', 'Deep Learning'], status: 'Planned' }
+];
+const settings = { emailUpdates: true, weeklyDigest: true, opportunityAlerts: false };
+// Notifications and most per-user state are now stored per-user in usersData
+if (savedState.skillGaps) skillGaps.splice(0, skillGaps.length, ...savedState.skillGaps);
+if (savedState.resumeChecklist) resumeChecklist.splice(0, resumeChecklist.length, ...savedState.resumeChecklist);
+if (savedState.learningResources) learningResources.splice(0, learningResources.length, ...savedState.learningResources);
+if (savedState.projects) projects.splice(0, projects.length, ...savedState.projects);
+if (savedState.settings) Object.assign(settings, savedState.settings);
+
+// Per-user data map initialization and helpers
+const usersData = savedState.usersData || {};
+function defaultUserData(email) {
+  return {
+    profile: { name: 'New User', track: 'Explore', email },
+    goal: 'AI Engineer',
+    applications: [],
+    certifications: JSON.parse(JSON.stringify(certificationsDefault)),
+    skillGaps: dashboard.gaps.map((gap, index) => ({ ...gap, id: index + 1 })),
+    resumeChecklist: JSON.parse(JSON.stringify(resumeChecklist)),
+    learningResources: JSON.parse(JSON.stringify(learningResources)),
+    projects: JSON.parse(JSON.stringify(projects)),
+    settings: Object.assign({}, settings),
+    mentorshipRequests: [],
+    notifications: [],
+    assessmentState: { lastResult: null },
+    skillMap: JSON.parse(JSON.stringify(skillMap)),
+    // Employer jobs for industry users
+    employerJobs: [],
+    // Offers received (for students)
+    offers: []
+  };
+}
+function getUserData(email) {
+  if (!email) return null;
+  if (!usersData[email]) usersData[email] = defaultUserData(email);
+  return usersData[email];
+}
+// Migrate legacy global savedState into demo user's per-user store for backward compatibility
+if (!usersData[authUser.email]) {
+  usersData[authUser.email] = defaultUserData(authUser.email);
+  if (savedState.user) usersData[authUser.email].profile = Object.assign(usersData[authUser.email].profile, savedState.user);
+  if (savedState.goal) usersData[authUser.email].goal = savedState.goal;
+  if (savedState.applications) usersData[authUser.email].applications = savedState.applications.map(a => Object.assign({}, a, { owner: authUser.email }));
+  if (savedState.certifications) usersData[authUser.email].certifications = savedState.certifications;
+  if (savedState.skillGaps) usersData[authUser.email].skillGaps = savedState.skillGaps;
+  if (savedState.resumeChecklist) usersData[authUser.email].resumeChecklist = savedState.resumeChecklist;
+  if (savedState.learningResources) usersData[authUser.email].learningResources = savedState.learningResources;
+  if (savedState.projects) usersData[authUser.email].projects = savedState.projects;
+  if (savedState.settings) usersData[authUser.email].settings = savedState.settings;
+  if (savedState.mentorshipRequests) usersData[authUser.email].mentorshipRequests = savedState.mentorshipRequests;
+  if (savedState.notifications) usersData[authUser.email].notifications = savedState.notifications;
+  if (savedState.assessmentState) usersData[authUser.email].assessmentState = savedState.assessmentState;
+}
+
+function saveState() {
+  // persist smtp and emailQueue through savedState object
+  try {
+    fs.writeFileSync(dataFile, JSON.stringify({ users, jwtSecret, usersData, auditLogs, deletedUsers, smtp: savedState.smtp || null, emailQueue: savedState.emailQueue || [], companies: savedState.companies || [], companyInvites: savedState.companyInvites || [] }, null, 2));
+  } catch (e) { /* ignore save errors */ }
+}
+
+// Compute per-skill scores for a given user's in-memory data and persist via DB helper (if available).
+// This is a pragmatic first implementation that uses existing per-user skillMap levels as a baseline
+// and nudges confidence based on available evidence (assessment result, projects, certifications).
+function computeScoresForUser(email) {
+  try {
+    if (!email) return [];
+    const userData = usersData[email] || defaultUserData(email);
+    const assessment = (userData.assessmentState && userData.assessmentState.lastResult) || null;
+    const projects = userData.projects || [];
+    const certs = userData.certifications || [];
+    const learning = userData.learningResources || [];
+    const profile = userData.profile || {};
+    const interviewEvidence = (userData.interviewAnswers || []);
+    const now = Date.now();
+
+    // Weights for evidence types (tunable)
+    const weights = { assessment: 0.35, projects: 0.2, learning: 0.15, certifications: 0.12, profile: 0.1, interview: 0.08 };
+
+    // helper: freshness multiplier (recent evidence carries more weight)
+    function freshnessMultiplier(timestampMs) {
+      if (!timestampMs) return 1.0;
+      const ageDays = Math.max(0, (now - timestampMs) / (1000 * 60 * 60 * 24));
+      // exponential decay: half-life ~90 days
+      const halfLife = 90;
+      return Math.pow(0.5, ageDays / halfLife);
+    }
+
+    const scores = (userData.skillMap || []).map((skill) => {
+      const skillName = (skill.name || '').toLowerCase();
+
+      // 1) assessment score component: map assessment questions to skills when possible.
+      let assessmentComponent = null;
+      if (assessment) {
+        const answers = (userData.assessmentState && userData.assessmentState.lastAnswers) || null;
+        let perSkillAssessment = null;
+        if (answers) {
+          // find question ids that map to this skill
+          const mappedQids = Object.keys(assessmentQuestionSkillMap || {}).filter(qid => {
+            const skillsForQ = assessmentQuestionSkillMap[qid] || [];
+            return skillsForQ.some(s => (s || '').toLowerCase() === skillName);
+          }).map(Number);
+          if (mappedQids.length > 0) {
+            let correctCount = 0;
+            for (const qid of mappedQids) {
+              const q = assessmentQuestions.find(x => Number(x.id) === Number(qid));
+              if (!q) continue;
+              // answers may be keyed by number or string
+              const userAnswer = (answers[qid] !== undefined) ? answers[qid] : answers[String(qid)];
+              if (userAnswer === q.answer) correctCount++;
+            }
+            perSkillAssessment = Math.round((correctCount / mappedQids.length) * 100);
+          }
+        }
+        if (perSkillAssessment === null) perSkillAssessment = Number(assessment.score || 0);
+        assessmentComponent = { value: perSkillAssessment, ts: (userData.assessmentState && userData.assessmentState.lastTimestamp) || null };
+      }
+
+      // 2) projects evidence: 0-100 depending on number and status of matching projects
+      const matchingProjects = projects.filter(p => Array.isArray(p.skills) && p.skills.map(x => x.toLowerCase()).includes(skillName));
+      let projectsScore = 0; let projectsTs = null;
+      if (matchingProjects.length > 0) {
+        // score projects: completed -> 100, in progress -> 60, planned -> 20
+        const mapped = matchingProjects.map(p => (p.status === 'Complete' ? 100 : p.status === 'In progress' ? 60 : 20));
+        projectsScore = Math.round(mapped.reduce((a,b)=>a+b,0)/mapped.length);
+        // pick most recent if timestamps present
+        projectsTs = matchingProjects.map(p => p.updatedAt || p.completedAt || 0).reduce((a,b)=>Math.max(a,b), 0) || null;
+      }
+      const projectsComponent = matchingProjects.length>0 ? { value: projectsScore, ts: projectsTs } : null;
+
+      // 3) learning progress for resources tagged to skill
+      const matchingLearning = learning.filter(l => (l.skill||'').toLowerCase() === skillName);
+      let learningScore = 0; let learningTs = null;
+      if (matchingLearning.length>0) {
+        const mapped = matchingLearning.map(l => Number(l.progress || 0));
+        learningScore = Math.round(mapped.reduce((a,b)=>a+b,0)/mapped.length);
+        learningTs = matchingLearning.map(l => l.updatedAt || 0).reduce((a,b)=>Math.max(a,b), 0) || null;
+      }
+      const learningComponent = matchingLearning.length>0 ? { value: learningScore, ts: learningTs } : null;
+
+      // 4) certifications relevance
+      const matchingCerts = certs.filter(c => (c.relevance||'').toLowerCase().includes(skillName));
+      let certScore = 0; let certTs = null;
+      if (matchingCerts.length>0) {
+        // map statuses: Complete=100, In progress=60, Planned=20
+        const mapped = matchingCerts.map(c => (c.status === 'Complete' ? 100 : c.status === 'In progress' ? 60 : 20));
+        certScore = Math.round(mapped.reduce((a,b)=>a+b,0)/mapped.length);
+        certTs = matchingCerts.map(c => c.updatedAt || 0).reduce((a,b)=>Math.max(a,b), 0) || null;
+      }
+      const certComponent = matchingCerts.length>0 ? { value: certScore, ts: certTs } : null;
+
+      // 5) profile/resume evidence (simple heuristic): how complete is profile and presence of skill in listed skills
+      let profileScore = 0; let profileTs = null;
+      if (Array.isArray(profile.skills) && profile.skills.map(s=>s.toLowerCase()).includes(skillName)) {
+        profileScore = 80; // presence indicates reasonably high signal
+        profileTs = profile.updatedAt || null;
+      }
+      const profileComponent = profileScore ? { value: profileScore, ts: profileTs } : null;
+
+      // 6) interview evidence: naive mapping if any interview answer mentions the skill
+      let interviewScore = 0; let interviewTs = null;
+      if (Array.isArray(interviewEvidence) && interviewEvidence.some(a => (a.text||'').toLowerCase().includes(skillName))) {
+        interviewScore = 75; interviewTs = interviewEvidence.map(a=>a.ts||0).reduce((a,b)=>Math.max(a,b),0) || null;
+      }
+      const interviewComponent = interviewScore ? { value: interviewScore, ts: interviewTs } : null;
+
+      // normalize each component to 0-100 and compute weighted sum
+      const compList = [];
+      if (assessmentComponent) compList.push({ key: 'assessment', value: assessmentComponent.value, ts: assessmentComponent.ts, weight: weights.assessment });
+      if (projectsComponent) compList.push({ key: 'projects', value: projectsComponent.value, ts: projectsComponent.ts, weight: weights.projects });
+      if (learningComponent) compList.push({ key: 'learning', value: learningComponent.value, ts: learningComponent.ts, weight: weights.learning });
+      if (certComponent) compList.push({ key: 'certifications', value: certComponent.value, ts: certComponent.ts, weight: weights.certifications });
+      if (profileComponent) compList.push({ key: 'profile', value: profileComponent.value, ts: profileComponent.ts, weight: weights.profile });
+      if (interviewComponent) compList.push({ key: 'interview', value: interviewComponent.value, ts: interviewComponent.ts, weight: weights.interview });
+
+      // compute weighted, freshness-adjusted raw score
+      let weightedSum = 0; let totalWeight = 0;
+      for (const c of compList) {
+        const fresh = freshnessMultiplier(c.ts);
+        weightedSum += (Number(c.value||0) * (c.weight||0) * fresh);
+        totalWeight += (c.weight||0) * fresh;
+      }
+      // baseline fallback when no evidence: use declared skill.level as baseline weight
+      let rawScore = 0;
+      if (totalWeight > 0) {
+        rawScore = Math.round(weightedSum / totalWeight);
+      } else {
+        rawScore = typeof skill.level === 'number' ? Math.round(skill.level) : 20;
+      }
+
+      // confidence: function of totalWeight and number of components
+      const evidenceCount = compList.length;
+      // scale totalWeight to [0,1] relative to sum of nominal weights
+      const nominalWeightSum = Object.values(weights).reduce((a,b)=>a+b,0);
+      const weightRatio = Math.min(1, totalWeight / nominalWeightSum);
+      let confidence = 0.2 + (0.75 * weightRatio); // between 0.2 and 0.95
+      if (evidenceCount === 0) confidence = 0.25; // very low
+
+      // population prior blending to avoid overconfidence for sparse evidence
+      let populationMean = null;
+      try { if (db && typeof db.getPopulationMean === 'function') populationMean = db.getPopulationMean(skill.id); } catch (e) { populationMean = null; }
+      if (populationMean === null) populationMean = 60; // fallback population prior
+
+      // blend final score toward population mean based on 1 - confidence
+      const finalScore = Math.round(confidence * rawScore + (1 - confidence) * populationMean);
+
+      const componentsObj = {};
+      for (const c of compList) componentsObj[c.key] = { value: Math.round(c.value || 0), weight: c.weight, fresh: Math.round((c.ts ? freshnessMultiplier(c.ts) * 100 : 100)), ts: c.ts || null };
+
+      const out = { skillId: skill.id, skillName: skill.name, score: finalScore, rawScore, confidence: Number(confidence.toFixed(2)), components: componentsObj, lastUpdated: now };
+      return out;
+    });
+
+    // persist to sqlite if available
+    if (db && typeof db.saveSkillScores === 'function') {
+      try { db.saveSkillScores(email, scores); } catch (e) { /* ignore DB save errors */ }
+    }
+    return scores;
+  } catch (e) { return []; }
+}
+
+// API: GET /api/skill-scores and POST /api/skill-scores/recompute are added below (near request handlers)
+
+
+// Migrate any legacy plaintext passwords in saved users to hashed form on startup (now that variables are initialized)
+(function migrateUsersToHashed() {
+  let changed = false;
+  if (Array.isArray(users)) {
+    for (const u of users) {
+      if (u && u.password) {
+        const { salt, hash } = hashPassword(u.password);
+        u.passwordHash = hash;
+        u.salt = salt;
+        delete u.password;
+        changed = true;
+      }
+      // Ensure every persisted user has a role (default to 'user')
+      if (u && !u.role) { u.role = 'user'; changed = true; }
+    }
+  }
+  if (!jwtSecret) { jwtSecret = crypto.randomBytes(32).toString('hex'); changed = true; }
+  if (changed) saveState();
+})();
+
+function base64UrlEncode(buf) {
+  return Buffer.from(buf).toString('base64').replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
+}
+
+function signJwt(payload, expiresInSec) {
+  const header = { alg: 'HS256', typ: 'JWT' };
+  const now = Math.floor(Date.now() / 1000);
+  const body = Object.assign({}, payload, { iat: now, exp: now + (expiresInSec || 3600) });
+  const toSign = `${base64UrlEncode(JSON.stringify(header))}.${base64UrlEncode(JSON.stringify(body))}`;
+  const signature = crypto.createHmac('sha256', jwtSecret || '').update(toSign).digest('base64');
+  const sigUrl = signature.replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
+  return `${toSign}.${sigUrl}`;
+}
+
+function verifyJwt(token) {
+  if (!token) return null;
+  const parts = token.split('.');
+  if (parts.length !== 3) return null;
+  const [headerB, payloadB, signature] = parts;
+  const toSign = `${headerB}.${payloadB}`;
+  const expectedSig = crypto.createHmac('sha256', jwtSecret || '').update(toSign).digest('base64').replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
+  try {
+    if (!crypto.timingSafeEqual(Buffer.from(expectedSig), Buffer.from(signature))) return null;
+  } catch (e) { return null; }
+  const payload = JSON.parse(Buffer.from(payloadB, 'base64').toString('utf8'));
+  if (payload.exp && Math.floor(Date.now() / 1000) > payload.exp) return null;
+  return payload;
+}
+
+// RBAC helpers
+function getUserRole(email) {
+  if (!email) return null;
+  if (email.toLowerCase() === (authUser.email || '').toLowerCase()) return 'admin';
+  if (Array.isArray(users)) {
+    const u = users.find((x) => (x.email || '').toLowerCase() === email.toLowerCase());
+    if (u && u.role) return u.role;
+  }
+  return 'student';
+}
+
+function ensureRole(currentUser, role) {
+  if (!currentUser || !role) return false;
+  if (currentUser.role && currentUser.role === role) return true;
+  return getUserRole(currentUser.email) === role;
+}
+
+// Audit helper
+function addAudit(action, actorEmail, targetEmail, details) {
+  try {
+    auditLogs.unshift({ id: Date.now(), time: new Date().toISOString(), action, actor: actorEmail || 'system', target: targetEmail || null, details: details || null });
+    // keep last 1000 logs
+    if (auditLogs.length > 1000) auditLogs.splice(1000);
+    saveState();
+  } catch (e) { /* ignore */ }
+}
+
+function sendJson(response, status, payload) {
+  response.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8' });
+  response.end(JSON.stringify(payload));
+}
+
+const frontendDir = path.join(repoRoot, 'frontend');
+function serveStatic(request, response) {
+  // prefer files from frontend/ if present, otherwise fall back to repo root
+  const requestedPathRaw = new URL(request.url, `http://${request.headers.host}`).pathname;
+  const requestedPath = requestedPathRaw === '/' ? '/index.html' : requestedPathRaw;
+
+  // try frontend directory first
+  const filePathFront = path.resolve(frontendDir, `.${requestedPath}`);
+  if (filePathFront.startsWith(frontendDir) && fs.existsSync(filePathFront) && !fs.statSync(filePathFront).isDirectory()) {
+    const contentTypes = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css' };
+    response.writeHead(200, { 'Content-Type': `${contentTypes[path.extname(filePathFront)] || 'application/octet-stream'}; charset=utf-8` });
+    fs.createReadStream(filePathFront).pipe(response);
+    return;
+  }
+
+  // fallback to repo root-based static serving
+  const filePath = path.resolve(repoRoot, `.${requestedPath}`);
+  if (!filePath.startsWith(repoRoot) || !fs.existsSync(filePath) || fs.statSync(filePath).isDirectory()) {
+    response.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
+    response.end('Not found');
+    return;
+  }
+  const contentTypes = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css' };
+  response.writeHead(200, { 'Content-Type': `${contentTypes[path.extname(filePath)] || 'application/octet-stream'}; charset=utf-8` });
+  fs.createReadStream(filePath).pipe(response);
+}
+
+const server = http.createServer((request, response) => {
+  const requestUrl = new URL(request.url, `http://${request.headers.host}`);
+  // parse JWT from Authorization header if present
+  let currentUser = null;
+  const authHeader = request.headers['authorization'] || request.headers['Authorization'];
+  if (authHeader && typeof authHeader === 'string' && authHeader.startsWith('Bearer ')) {
+    const payload = verifyJwt(authHeader.slice(7));
+    if (payload && payload.email) currentUser = payload;
+  }
+
+  // Enforce authentication for write operations (POST, PATCH, DELETE)
+  // Allow unauthenticated access to login and register endpoints
+  const writeExemptPaths = new Set(['/api/login', '/api/register', '/api/auth/forgot', '/api/auth/reset', '/api/auth/verify', '/api/company/invite/accept']);
+  // Debug: log company-related requests to help diagnose routing issues
+  if (requestUrl.pathname && requestUrl.pathname.startsWith('/api/company')) {
+    try { console.log('DEBUG: incoming', request.method, requestUrl.pathname); } catch (e) {}
+  }
+  if (['POST', 'PATCH', 'DELETE'].includes(request.method) && !writeExemptPaths.has(requestUrl.pathname)) {
+    if (!currentUser) { sendJson(response, 401, { error: 'Authentication required' }); return; }
+  }
+
+  // Friendly landing pages for token links: /reset?token=... and /verify?token=...
+  if (request.method === 'GET' && requestUrl.pathname === '/reset') {
+    const token = requestUrl.searchParams.get('token') || '';
+    response.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+    response.end(`<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Reset Password</title></head><body><p>Redirecting to SkillBridge app...</p><script>var t=${JSON.stringify(token)};location.replace('/#reset?token='+encodeURIComponent(t));</script></body></html>`);
+    return;
+  }
+  if (request.method === 'GET' && requestUrl.pathname === '/verify') {
+    const token = requestUrl.searchParams.get('token') || '';
+    response.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+    response.end(`<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Verify Email</title></head><body><p>Redirecting to SkillBridge app...</p><script>var t=${JSON.stringify(token)};location.replace('/#verify?token='+encodeURIComponent(t));</script></body></html>`);
+    return;
+  }
+
+  if (request.method === 'POST' && requestUrl.pathname === '/api/login') {
+    let body = '';
+    request.on('data', (chunk) => { body += chunk; });
+    request.on('end', () => {
+      try {
+        const { email, password } = JSON.parse(body);
+       const normalizedEmail = typeof email === 'string' ? email.trim().toLowerCase() : '';
+       const normalizedPassword = typeof password === 'string' ? password.trim() : '';
+        let matchedUser = null;
+        // check the built-in demo account first
+        if (normalizedEmail === authUser.email.toLowerCase() && normalizedPassword === authUser.password) {
+          matchedUser = { email: authUser.email, name: dashboard.user.name };
+        }
+        // then check persisted users (support hashed and legacy plaintext)
+        if (!matchedUser && Array.isArray(users)) {
+          for (const entry of users) {
+            if ((entry.email || '').toLowerCase() === normalizedEmail) {
+              if (entry.passwordHash && entry.salt) {
+                if (verifyPassword(normalizedPassword, entry.salt, entry.passwordHash)) { matchedUser = { email: entry.email, name: entry.name || entry.email.split('@')[0] }; break; }
+              } else if (entry.password && entry.password === normalizedPassword) {
+                matchedUser = { email: entry.email, name: entry.name || entry.email.split('@')[0] };
+                break;
+              }
+            }
+          }
+        }
+        if (!matchedUser) throw new Error('Incorrect email or password');
+        // determine role and sign JWT (include role in payload)
+        const role = getUserRole(matchedUser.email);
+        const token = signJwt({ email: matchedUser.email, role }, 60 * 60 * 24);
+        // resolve profile name from per-user data when available
+        const profileData = getUserData(matchedUser.email);
+        const userOut = { email: matchedUser.email, name: (profileData && profileData.profile && profileData.profile.name) || (matchedUser.name || matchedUser.email.split('@')[0]), role };
+        sendJson(response, 200, { user: userOut, token });
+      } catch (error) {
+        sendJson(response, 401, { error: error.message });
+      }
+    });
+    return;
+  }
+
+   // Register new user
+   if (request.method === 'POST' && requestUrl.pathname === '/api/register') {
+  let body = '';
+          request.on('data', (chunk) => { body += chunk; });
+          request.on('end', () => {
+        try {
+          const { email, password, name, role, accountType, companyName, college, department, year, phone } = JSON.parse(body || '{}');
+         const normalizedEmail = typeof email === 'string' ? email.trim().toLowerCase() : '';
+          const pwd = typeof password === 'string' ? password : '';
+          // determine requested role/account
+          const requestedRole = (typeof role === 'string' && ['student','industry','user'].includes(role)) ? role : null;
+          const acctType = typeof accountType === 'string' && ['student','industry','company'].includes(accountType) ? accountType : (requestedRole === 'industry' ? 'industry' : 'student');
+          if (!normalizedEmail || !pwd) throw new Error('Email and password are required');
+          if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(normalizedEmail)) throw new Error('Invalid email address');
+          if (pwd.length < 6) throw new Error('Password must be at least 6 characters');
+          if (Array.isArray(users) && users.some((u) => (u.email || '').toLowerCase() === normalizedEmail)) throw new Error('An account with that email already exists');
+          const { salt, hash } = hashPassword(pwd);
+          // If creating a company account, create a company record and associate
+          let companyId = null;
+          if (acctType === 'company') {
+            if (!companyName || typeof companyName !== 'string' || companyName.trim().length < 2) throw new Error('Company name required');
+            const company = { id: Date.now(), name: companyName.trim(), owner: normalizedEmail, createdAt: new Date().toISOString() };
+            savedState.companies = savedState.companies || [];
+            savedState.companies.push(company);
+            companyId = company.id;
+            addAudit('company_create', normalizedEmail, null, { companyId: company.id, name: company.name });
+          }
+          const userRole = acctType === 'industry' || acctType === 'company' ? 'industry' : 'student';
+          const newUser = { email: normalizedEmail, name: name || normalizedEmail.split('@')[0], passwordHash: hash, salt, role: userRole, companyId };
+          users.push(newUser);
+          // initialize per-user data
+          if (!usersData[normalizedEmail]) usersData[normalizedEmail] = defaultUserData(normalizedEmail);
+          usersData[normalizedEmail].profile.name = newUser.name;
+          usersData[normalizedEmail].profile.email = newUser.email;
+          // persist student profile fields when provided
+          if (acctType === 'student') {
+            if (typeof college === 'string' && college.trim()) usersData[normalizedEmail].profile.college = college.trim();
+            if (typeof department === 'string' && department.trim()) usersData[normalizedEmail].profile.department = department.trim();
+            if (typeof year === 'string' && year.trim()) usersData[normalizedEmail].profile.year = year.trim();
+            if (typeof phone === 'string' && phone.trim()) usersData[normalizedEmail].profile.phone = phone.trim();
+          }
+          if (companyId) {
+            // attach company info to user's per-user data for convenience
+            usersData[normalizedEmail].company = savedState.companies.find(c => c.id === companyId) || null;
+          }
+          saveState();
+          // issue email verification token and enqueue verification email
+          const vtoken = crypto.randomBytes(12).toString('hex');
+          const verification = { id: 'verify_' + Date.now(), email: normalizedEmail, tokenHash: hashToken(vtoken), createdAt: Date.now(), expiresAt: Date.now() + (1000 * 60 * 60 * 24 * 3), emailSent: false, emailAttempts: [] };
+          savedState.emailVerifications = savedState.emailVerifications || [];
+          savedState.emailVerifications.push(verification);
+          savedState.emailQueue = savedState.emailQueue || [];
+          const verifyMail = { from: process.env.SMTP_FROM || (savedState.smtp && savedState.smtp.from) || 'no-reply@skillbridge.ai', to: normalizedEmail, subject: `Verify your SkillBridge account`, text: `Welcome ${newUser.name}, please verify your email using token: ${vtoken} or visit /verify?token=${vtoken}` };
+          const verifyJob = { id: Date.now(), type: 'verify', verifyId: verification.id, email: normalizedEmail, mailOpts: verifyMail, attempts: 0, maxAttempts: Number(process.env.SMTP_RETRY || (savedState.smtp && savedState.smtp.retries) || 3), baseDelay: Number(process.env.SMTP_RETRY_DELAY_MS || (savedState.smtp && savedState.smtp.retryDelayMs) || 1000), nextRun: Date.now() };
+          savedState.emailQueue.push(verifyJob);
+          addAudit('user_register', normalizedEmail, null, { role: newUser.role, companyId });
+          const token = signJwt({ email: newUser.email, role: newUser.role, companyId: companyId || null }, 60 * 60 * 24);
+          saveState();
+          sendJson(response, 201, { email: newUser.email, name: newUser.name, role: newUser.role, token, companyId });
+        } catch (error) {
+          sendJson(response, 400, { error: error.message });
+        }
+    });
+    return;
+  }
+
+  if (request.method === 'POST' && requestUrl.pathname === '/api/auth/forgot') {
+    let body = '';
+    request.on('data', (chunk) => { body += chunk; });
+    request.on('end', () => {
+      try {
+        const { email } = JSON.parse(body || '{}');
+        const qemail = (email || '').trim().toLowerCase();
+        if (!qemail) throw new Error('email required');
+        // generate reset token regardless of whether user exists (avoid enumeration)
+        const token = crypto.randomBytes(12).toString('hex');
+        const reset = { id: 'reset_' + Date.now(), email: qemail, tokenHash: hashToken(token), createdAt: Date.now(), expiresAt: Date.now() + 1000 * 60 * 60, emailSent: false, emailAttempts: [] };
+        savedState.passwordResets = savedState.passwordResets || [];
+        savedState.passwordResets.push(reset);
+        savedState.emailQueue = savedState.emailQueue || [];
+        const mailOpts = { from: process.env.SMTP_FROM || (savedState.smtp && savedState.smtp.from) || 'no-reply@skillbridge.ai', to: qemail, subject: 'Password reset for SkillBridge', text: `Use this token to reset your password: ${token} or visit /reset?token=${token}` };
+        const job = { id: Date.now(), type: 'reset', resetId: reset.id, email: qemail, mailOpts, attempts: 0, maxAttempts: Number(process.env.SMTP_RETRY || (savedState.smtp && savedState.smtp.retries) || 3), baseDelay: Number(process.env.SMTP_RETRY_DELAY_MS || (savedState.smtp && savedState.smtp.retryDelayMs) || 1000), nextRun: Date.now() };
+        savedState.emailQueue.push(job);
+        addAudit('password_reset_requested', qemail, null, { requestor: request.headers['x-forwarded-for'] || request.connection.remoteAddress || null });
+        saveState();
+        sendJson(response, 200, { ok: true });
+      } catch (e) { sendJson(response, 400, { error: e.message }); }
+    });
+    return;
+  }
+
+  if (request.method === 'POST' && requestUrl.pathname === '/api/auth/reset') {
+    let body = '';
+    request.on('data', (chunk) => { body += chunk; });
+    request.on('end', () => {
+      try {
+        const { token, password } = JSON.parse(body || '{}');
+        if (!token || !password) throw new Error('token and password required');
+        const reset = (savedState.passwordResets || []).find(r => r.tokenHash === hashToken(token) && (!r.expiresAt || r.expiresAt > Date.now()));
+        if (!reset) throw new Error('Invalid or expired token');
+        const qemail = (reset.email || '').toLowerCase();
+        const user = (users || []).find(u => (u.email||'').toLowerCase() === qemail);
+        if (!user) throw new Error('User not found');
+        const { salt, hash } = hashPassword(password);
+        user.salt = salt; user.passwordHash = hash;
+        // remove reset record
+        savedState.passwordResets = (savedState.passwordResets || []).filter(r => r.id !== reset.id);
+        addAudit('password_reset_completed', qemail, null, { by: request.headers['x-forwarded-for'] || request.connection.remoteAddress || null });
+        saveState();
+        sendJson(response, 200, { ok: true });
+      } catch (e) { sendJson(response, 400, { error: e.message }); }
+    });
+    return;
+  }
+
+  if (request.method === 'POST' && requestUrl.pathname === '/api/auth/verify') {
+    let body = '';
+    request.on('data', (chunk) => { body += chunk; });
+    request.on('end', () => {
+      try {
+        const { token } = JSON.parse(body || '{}');
+        if (!token) throw new Error('token required');
+        const v = (savedState.emailVerifications || []).find(vv => vv.tokenHash === hashToken(token) && (!vv.expiresAt || vv.expiresAt > Date.now()));
+        if (!v) throw new Error('Invalid or expired token');
+        const qemail = (v.email || '').toLowerCase();
+        usersData[qemail] = usersData[qemail] || defaultUserData(qemail);
+        usersData[qemail].profile = usersData[qemail].profile || {};
+        usersData[qemail].profile.emailVerified = true;
+        // mark user record if exists
+        const u = (users || []).find(x => (x.email||'').toLowerCase() === qemail);
+        if (u) u.emailVerified = true;
+        // cleanup
+        savedState.emailVerifications = (savedState.emailVerifications || []).filter(x => x.id !== v.id);
+        addAudit('email_verified', qemail, null, { via: 'token' });
+        saveState();
+        sendJson(response, 200, { ok: true });
+      } catch (e) { sendJson(response, 400, { error: e.message }); }
+    });
+    return;
+  }
+
+  if (request.method === 'GET' && requestUrl.pathname === '/api/dashboard') {
+    const userData = currentUser ? getUserData(currentUser.email) : getUserData(authUser.email);
+    const averageGapProgress = userData.skillGaps.reduce((total, gap) => total + gap.progress, 0) / (userData.skillGaps.length || 1);
+    const completedProfileItems = (userData.resumeChecklist || []).filter((item) => item.complete).length;
+    const goalFit = { 'AI Engineer': 86, 'ML Engineer': 89, 'Data Scientist': 82, 'MLOps Engineer': 78 };
+    const metrics = { readiness: Math.round(60 + averageGapProgress * 0.45), fit: goalFit[userData.goal] || 80, profile: Math.min(100, 80 + completedProfileItems * 4) };
+    sendJson(response, 200, { user: userData.profile, goal: userData.goal, metrics, gaps: userData.skillGaps, opportunities: dashboard.opportunities });
+    return;
+  }
+
+  // Student-scoped consolidated APIs (convenience wrappers)
+  if (request.method === 'GET' && requestUrl.pathname === '/api/student/dashboard') {
+    if (!currentUser) { sendJson(response, 401, { error: 'Authentication required' }); return; }
+    const userData = getUserData(currentUser.email);
+    const averageGapProgress = userData.skillGaps.reduce((total, gap) => total + gap.progress, 0) / (userData.skillGaps.length || 1);
+    const completedProfileItems = (userData.resumeChecklist || []).filter((item) => item.complete).length;
+    const goalFit = { 'AI Engineer': 86, 'ML Engineer': 89, 'Data Scientist': 82, 'MLOps Engineer': 78 };
+    const metrics = { readiness: Math.round(60 + averageGapProgress * 0.45), fit: goalFit[userData.goal] || 80, profile: Math.min(100, 80 + completedProfileItems * 4) };
+    // include per-skill scores when available
+    let scores = [];
+    try { if (db && typeof db.getSkillScores === 'function') scores = db.getSkillScores(currentUser.email) || []; } catch (e) { scores = []; }
+    if (!scores || scores.length === 0) {
+      const computed = computeScoresForUser(currentUser.email);
+      scores = computed.map(r => ({ skillId: r.skillId, skillName: r.skillName, score: r.score, confidence: r.confidence }));
+      // attempt to persist
+      if (db && typeof db.saveSkillScores === 'function') {
+        try { db.saveSkillScores(currentUser.email, computed).catch(()=>{}); } catch (e) {}
+      }
+    }
+    sendJson(response, 200, { user: userData.profile, goal: userData.goal, metrics, gaps: userData.skillGaps, opportunities: dashboard.opportunities, scores });
+    return;
+  }
+
+  if (request.method === 'GET' && requestUrl.pathname === '/api/student/skillmap') {
+    if (!currentUser) { sendJson(response, 401, { error: 'Authentication required' }); return; }
+    const userData = getUserData(currentUser.email);
+    // get canonical skill map (from server) and per-user scores
+    let skills = userData.skillMap || skillMap;
+    let scores = [];
+    try { if (db && typeof db.getSkillScores === 'function') scores = db.getSkillScores(currentUser.email) || []; } catch (e) { scores = []; }
+    if (!scores || scores.length === 0) {
+      const computed = computeScoresForUser(currentUser.email);
+      scores = computed.map(r => ({ skillId: r.skillId, skillName: r.skillName, score: r.score, confidence: r.confidence }));
+      if (db && typeof db.saveSkillScores === 'function') { try { db.saveSkillScores(currentUser.email, computed).catch(()=>{}); } catch (e) {} }
+    }
+    sendJson(response, 200, { skills, scores });
+    return;
+  }
+
+  if (request.method === 'GET' && requestUrl.pathname === '/api/student/assessments') {
+    if (!currentUser) { sendJson(response, 401, { error: 'Authentication required' }); return; }
+    const userData = getUserData(currentUser.email);
+    sendJson(response, 200, { questions: assessmentQuestions.map(({ id, prompt, options }) => ({ id, prompt, options })), lastResult: userData.assessmentState.lastResult });
+    return;
+  }
+
+  if (request.method === 'POST' && requestUrl.pathname === '/api/student/assessments/submit') {
+    if (!currentUser) { sendJson(response, 401, { error: 'Authentication required' }); return; }
+    let body = '';
+    request.on('data', (chunk) => { body += chunk; });
+    request.on('end', async () => {
+      try {
+        const answers = JSON.parse(body).answers || {};
+        const correct = assessmentQuestions.filter((question) => answers[question.id] === question.answer).length;
+        const result = { score: Math.round((correct / assessmentQuestions.length) * 100), correct, total: assessmentQuestions.length, recommendation: correct === assessmentQuestions.length ? 'Your fundamentals are strong. Focus on production projects next.' : 'Review FastAPI, Docker, and model evaluation in your Skill Gap Plan.' };
+        const userData = getUserData(currentUser.email);
+        userData.assessmentState.lastResult = result;
+        userData.assessmentState.lastAnswers = answers;
+        userData.assessmentState.lastTimestamp = Date.now();
+        // recompute scores to reflect assessment outcome and persist
+        const computed = computeScoresForUser(currentUser.email);
+        if (db && typeof db.saveSkillScores === 'function') {
+          try { await db.saveSkillScores(currentUser.email, computed); } catch (e) { /* ignore save errors */ }
+        }
+        saveState();
+        sendJson(response, 200, result);
+      } catch (error) { sendJson(response, 400, { error: 'Invalid assessment submission' }); }
+    });
+    return;
+  }
+
+  if (request.method === 'PATCH' && requestUrl.pathname === '/api/goal') {
+    if (!currentUser) { sendJson(response, 401, { error: 'Authentication required' }); return; }
+    let body = '';
+    request.on('data', (chunk) => { body += chunk; });
+    request.on('end', () => {
+      try {
+        const { goal } = JSON.parse(body);
+        if (!['AI Engineer', 'ML Engineer', 'Data Scientist', 'MLOps Engineer'].includes(goal)) throw new Error('Unsupported career goal');
+        const userData = getUserData(currentUser.email);
+        userData.goal = goal;
+        saveState();
+        sendJson(response, 200, { goal });
+      } catch (error) {
+        sendJson(response, 400, { error: error.message });
+      }
+    });
+    return;
+  }
+
+  if (request.method === 'GET' && requestUrl.pathname === '/api/search') {
+    const query = (requestUrl.searchParams.get('q') || '').trim().toLowerCase();
+    const userData = currentUser ? getUserData(currentUser.email) : getUserData(authUser.email);
+    const results = [
+      ...dashboard.opportunities.map((item) => ({ title: item.title, detail: `${item.company} · ${item.location}`, type: 'Opportunity', view: item.type === 'INTERNSHIP' ? 'internships' : 'jobs' })),
+      ...(userData.skillMap || []).map((item) => ({ title: item.name, detail: `${item.level}% current level · ${item.group}`, type: 'Skill', view: 'skill-map' }))
+    ].filter((item) => `${item.title} ${item.detail}`.toLowerCase().includes(query)).slice(0, 8);
+    sendJson(response, 200, { results });
+    return;
+  }
+
+  // Applications (per-user)
+  if (request.method === 'GET' && requestUrl.pathname === '/api/applications') {
+    const userData = currentUser ? getUserData(currentUser.email) : getUserData(authUser.email);
+    sendJson(response, 200, { applications: userData.applications || [] });
+    return;
+  }
+
+  if (request.method === 'POST' && requestUrl.pathname === '/api/applications') {
+    if (!currentUser) { sendJson(response, 401, { error: 'Authentication required' }); return; }
+    let body = '';
+    request.on('data', (chunk) => { body += chunk; });
+    request.on('end', () => {
+      try {
+        const { role, company } = JSON.parse(body);
+        if (!role || !company) throw new Error('Role and company are required');
+        const userData = getUserData(currentUser.email);
+        const existing = (userData.applications || []).find((item) => item.role === role && item.company === company);
+        if (existing) { sendJson(response, 200, existing); return; }
+        const application = { id: Date.now(), role, company, status: 'Saved', updated: 'Just now', owner: currentUser.email };
+        userData.applications.unshift(application);
+        userData.notifications.unshift({ id: Date.now(), title: 'Role saved', detail: `${role} at ${company} was added to your Saved applications.`, time: 'Just now', unread: true });
+        saveState();
+        sendJson(response, 201, application);
+      } catch (error) {
+        sendJson(response, 400, { error: error.message });
+      }
+    });
+    return;
+  }
+
+  if (request.method === 'GET' && requestUrl.pathname === '/api/skill-gaps') {
+    const userData = currentUser ? getUserData(currentUser.email) : getUserData(authUser.email);
+    sendJson(response, 200, { skillGaps: userData.skillGaps });
+    return;
+  }
+
+  if (request.method === 'GET' && requestUrl.pathname === '/api/resume') {
+    const userData = currentUser ? getUserData(currentUser.email) : getUserData(authUser.email);
+    sendJson(response, 200, { checklist: userData.resumeChecklist });
+    return;
+  }
+
+  if (request.method === 'GET' && requestUrl.pathname === '/api/interview/question') {
+    sendJson(response, 200, interviewQuestions[Math.floor(Math.random() * interviewQuestions.length)]);
+    return;
+  }
+
+  if (request.method === 'GET' && requestUrl.pathname === '/api/learning') {
+    const userData = currentUser ? getUserData(currentUser.email) : getUserData(authUser.email);
+    sendJson(response, 200, { resources: userData.learningResources });
+    return;
+  }
+
+  if (request.method === 'GET' && requestUrl.pathname === '/api/mentors') {
+    const userData = currentUser ? getUserData(currentUser.email) : getUserData(authUser.email);
+    sendJson(response, 200, { mentors, requestedMentorIds: userData.mentorshipRequests });
+    return;
+  }
+
+  if (request.method === 'GET' && requestUrl.pathname === '/api/analytics') {
+    const userData = currentUser ? getUserData(currentUser.email) : getUserData(authUser.email);
+    const averageGapProgress = userData.skillGaps.reduce((total, gap) => total + gap.progress, 0) / (userData.skillGaps.length || 1);
+    const completedProfileItems = (userData.resumeChecklist || []).filter((item) => item.complete).length;
+    const recommendation = `Focus on ${userData.skillGaps[0].name} and one project to increase readiness.`;
+    sendJson(response, 200, { breakdown: analytics.breakdown, weekly: analytics.weekly, recommendation, metrics: { readiness: Math.round(60 + averageGapProgress * 0.45), profileScore: Math.min(100, 80 + completedProfileItems * 4) } });
+    return;
+  }
+
+  if (request.method === 'GET' && requestUrl.pathname === '/api/skill-map') {
+    const userData = currentUser ? getUserData(currentUser.email) : getUserData(authUser.email);
+    sendJson(response, 200, { skills: userData.skillMap });
+    return;
+  }
+  
+  // Return per-skill computed scores for the current user (from sqlite if available, otherwise compute on the fly)
+  if (request.method === 'GET' && requestUrl.pathname === '/api/skill-scores') {
+    const userEmail = currentUser ? currentUser.email : authUser.email;
+    let rows = [];
+    try {
+      if (db && typeof db.getSkillScores === 'function') rows = db.getSkillScores(userEmail);
+    } catch (e) { rows = []; }
+    if (!rows || rows.length === 0) {
+      // compute from in-memory state and persist
+      const computed = computeScoresForUser(userEmail);
+      rows = computed.map(r => ({ skillId: r.skillId, skillName: r.skillName, score: r.score, confidence: r.confidence, lastUpdated: r.lastUpdated }));
+    }
+    sendJson(response, 200, { scores: rows });
+    return;
+  }
+  
+  // POST /api/skill-scores/recompute - admin or user can request recompute for a user (admin may pass userEmail in body)
+  if (request.method === 'POST' && requestUrl.pathname === '/api/skill-scores/recompute') {
+    let body = '';
+    request.on('data', (chunk) => { body += chunk; });
+    request.on('end', () => {
+      try {
+        const payload = body ? JSON.parse(body) : {};
+        let targetEmail = payload.userEmail || (currentUser ? currentUser.email : authUser.email);
+        // only admin may recompute for other users
+        if (payload.userEmail && (!currentUser || getUserRole(currentUser.email) !== 'admin')) { sendJson(response, 403, { error: 'Admin required to recompute for other users' }); return; }
+        const results = computeScoresForUser(targetEmail);
+        sendJson(response, 200, { recomputed: results.length });
+      } catch (e) { sendJson(response, 400, { error: 'Invalid request' }); }
+    });
+    return;
+  }
+
+  // POST /api/skill-scores/recompute-all - admin-only: recompute scores for all users and persist
+  if (request.method === 'POST' && requestUrl.pathname === '/api/skill-scores/recompute-all') {
+    let body = '';
+    request.on('data', (chunk) => { body += chunk; });
+    request.on('end', async () => {
+      try {
+        // only admin may call this
+        if (!currentUser || getUserRole(currentUser.email) !== 'admin') { sendJson(response, 403, { error: 'Admin required to recompute for all users' }); return; }
+        const allUsers = Array.isArray(savedState.users) ? savedState.users : (users || []);
+        let processed = 0;
+        for (const u of allUsers) {
+          try {
+            const email = u && u.email ? u.email : null;
+            if (!email) continue;
+            const results = computeScoresForUser(email);
+            // persist if DB available
+            if (db && typeof db.saveSkillScores === 'function') {
+              try { await db.saveSkillScores(email, results); } catch (e) { /* log and continue */ console.error('DB save error for', email, e && e.message); }
+            }
+            processed++;
+          } catch (e) {
+            console.error('Recompute failed for user', u && u.email, e && e.message);
+          }
+        }
+        sendJson(response, 200, { processed });
+      } catch (e) { sendJson(response, 500, { error: 'Recompute failed' }); }
+    });
+    return;
+  }
+
+  if (request.method === 'GET' && requestUrl.pathname === '/api/projects') {
+    const userData = currentUser ? getUserData(currentUser.email) : getUserData(authUser.email);
+    sendJson(response, 200, { projects: userData.projects });
+    return;
+  }
+
+  if (request.method === 'GET' && requestUrl.pathname === '/api/certifications') {
+    const userData = currentUser ? getUserData(currentUser.email) : getUserData(authUser.email);
+    sendJson(response, 200, { certifications: userData.certifications });
+    return;
+  }
+
+  if (request.method === 'GET' && requestUrl.pathname === '/api/assessment') {
+    const userData = currentUser ? getUserData(currentUser.email) : getUserData(authUser.email);
+    sendJson(response, 200, { questions: assessmentQuestions.map(({ id, prompt, options }) => ({ id, prompt, options })), lastResult: userData.assessmentState.lastResult });
+    return;
+  }
+
+  if (request.method === 'POST' && requestUrl.pathname === '/api/assessment/submit') {
+    let body = '';
+    request.on('data', (chunk) => { body += chunk; });
+    request.on('end', () => {
+      try {
+        const answers = JSON.parse(body).answers || {};
+        const correct = assessmentQuestions.filter((question) => answers[question.id] === question.answer).length;
+        const result = { score: Math.round((correct / assessmentQuestions.length) * 100), correct, total: assessmentQuestions.length, recommendation: correct === assessmentQuestions.length ? 'Your fundamentals are strong. Focus on production projects next.' : 'Review FastAPI, Docker, and model evaluation in your Skill Gap Plan.' };
+        const userData = currentUser ? getUserData(currentUser.email) : getUserData(authUser.email);
+        // persist overall result and per-question answers so we can map assessment items to skills later
+        userData.assessmentState.lastResult = result;
+        userData.assessmentState.lastAnswers = answers;
+        userData.assessmentState.lastTimestamp = Date.now();
+        saveState();
+        sendJson(response, 200, result);
+      } catch (error) { sendJson(response, 400, { error: 'Invalid assessment submission' }); }
+    });
+    return;
+  }
+
+  if (request.method === 'PATCH' && requestUrl.pathname.startsWith('/api/certifications/')) {
+    const userData = currentUser ? getUserData(currentUser.email) : getUserData(authUser.email);
+    const certId = Number(requestUrl.pathname.split('/').pop());
+    const certification = (userData.certifications || []).find((item) => item.id === certId);
+    if (!certification) { sendJson(response, 404, { error: 'Certification not found' }); return; }
+    certification.status = 'Complete';
+    saveState();
+    sendJson(response, 200, certification);
+    return;
+  }
+
+  if (request.method === 'GET' && requestUrl.pathname === '/api/settings') {
+    const userData = currentUser ? getUserData(currentUser.email) : getUserData(authUser.email);
+    sendJson(response, 200, { profile: userData.profile, goal: userData.goal, settings: userData.settings });
+    return;
+  }
+
+  if (request.method === 'PATCH' && requestUrl.pathname === '/api/profile') {
+    if (!currentUser) { sendJson(response, 401, { error: 'Authentication required' }); return; }
+    let body = '';
+    request.on('data', (chunk) => { body += chunk; });
+    request.on('end', () => {
+      try {
+        const { name, track, college, department, year, phone } = JSON.parse(body || '{}');
+        if (!name || !track || name.trim().length < 2 || track.trim().length < 2) throw new Error('Name and track are required');
+        const userData = getUserData(currentUser.email);
+        userData.profile.name = name.trim();
+        userData.profile.track = track.trim();
+        // optional student fields
+        if (typeof college === 'string' && college.trim()) userData.profile.college = college.trim();
+        if (typeof department === 'string' && department.trim()) userData.profile.department = department.trim();
+        if (typeof year === 'string' && year.trim()) userData.profile.year = year.trim();
+        if (typeof phone === 'string' && phone.trim()) userData.profile.phone = phone.trim();
+        saveState();
+        sendJson(response, 200, userData.profile);
+      } catch (error) {
+        sendJson(response, 400, { error: error.message });
+      }
+    });
+    return;
+  }
+
+  if (request.method === 'GET' && requestUrl.pathname === '/api/notifications') {
+    const userData = currentUser ? getUserData(currentUser.email) : getUserData(authUser.email);
+    sendJson(response, 200, { notifications: userData.notifications });
+    return;
+  }
+
+  if (request.method === 'PATCH' && requestUrl.pathname === '/api/notifications/read') {
+    if (!currentUser) { sendJson(response, 401, { error: 'Authentication required' }); return; }
+    const userData = getUserData(currentUser.email);
+    userData.notifications.forEach((notification) => { notification.unread = false; });
+    saveState();
+    sendJson(response, 200, { notifications: userData.notifications });
+    return;
+  }
+
+  if (request.method === 'PATCH' && requestUrl.pathname === '/api/settings') {
+    if (!currentUser) { sendJson(response, 401, { error: 'Authentication required' }); return; }
+    let body = '';
+    request.on('data', (chunk) => { body += chunk; });
+    request.on('end', () => {
+      try {
+        const updates = JSON.parse(body);
+        const userData = getUserData(currentUser.email);
+        Object.keys(userData.settings).forEach((key) => { if (typeof updates[key] === 'boolean') userData.settings[key] = updates[key]; });
+        saveState();
+        sendJson(response, 200, { settings: userData.settings });
+      } catch (error) {
+        sendJson(response, 400, { error: 'Invalid settings update' });
+      }
+    });
+    return;
+  }
+
+  if (request.method === 'PATCH' && requestUrl.pathname.startsWith('/api/projects/')) {
+      if (!currentUser) { sendJson(response, 401, { error: 'Authentication required' }); return; }
+      const id = Number(requestUrl.pathname.split('/').pop());
+      const userData = getUserData(currentUser.email);
+      const project = (userData.projects || []).find((item) => item.id === id);
+      if (!project) { sendJson(response, 404, { error: 'Project not found' }); return; }
+      project.status = 'Complete';
+      saveState();
+      sendJson(response, 200, project);
+      return;
+    }
+
+    if (request.method === 'POST' && requestUrl.pathname === '/api/mentorship/request') {
+      if (!currentUser) { sendJson(response, 401, { error: 'Authentication required' }); return; }
+      let body = '';
+      request.on('data', (chunk) => { body += chunk; });
+      request.on('end', () => {
+        const mentorId = Number(JSON.parse(body).mentorId);
+        if (!mentors.some((mentor) => mentor.id === mentorId)) { sendJson(response, 400, { error: 'Mentor not found' }); return; }
+        const userData = getUserData(currentUser.email);
+        if (!userData.mentorshipRequests.includes(mentorId)) userData.mentorshipRequests.push(mentorId);
+        saveState();
+        sendJson(response, 201, { requested: true, mentorId });
+      });
+      return;
+    }
+
+  if (request.method === 'PATCH' && requestUrl.pathname.startsWith('/api/learning/')) {
+    const id = Number(requestUrl.pathname.split('/').pop());
+      const userData = currentUser ? getUserData(currentUser.email) : getUserData(authUser.email);
+      const resource = (userData.learningResources || []).find((item) => item.id === id);
+      if (!resource) { sendJson(response, 404, { error: 'Learning resource not found' }); return; }
+      resource.progress = Math.min(100, resource.progress + 20);
+      saveState();
+      sendJson(response, 200, resource);
+      return;
+    }
+
+  if (request.method === 'POST' && requestUrl.pathname === '/api/interview/feedback') {
+    let body = '';
+    request.on('data', (chunk) => { body += chunk; });
+    request.on('end', () => {
+      try {
+        const { answer } = JSON.parse(body);
+        if (!answer || answer.trim().length < 20) throw new Error('Write at least a few sentences for useful feedback');
+        sendJson(response, 200, { score: Math.min(95, 62 + Math.round(answer.trim().length / 8)), feedback: 'Strong starting point. Name the tools you would use, explain the tradeoffs, and close with the result you expect.' });
+      } catch (error) {
+        sendJson(response, 400, { error: error.message });
+      }
+    });
+    return;
+  }
+
+  if (request.method === 'PATCH' && requestUrl.pathname.startsWith('/api/resume/')) {
+    const id = Number(requestUrl.pathname.split('/').pop());
+    let body = '';
+    request.on('data', (chunk) => { body += chunk; });
+    request.on('end', () => {
+      try {
+          const userData = currentUser ? getUserData(currentUser.email) : getUserData(authUser.email);
+          const item = (userData.resumeChecklist || []).find((entry) => entry.id === id);
+          const { complete } = JSON.parse(body);
+          if (!item || typeof complete !== 'boolean') throw new Error('Invalid resume update');
+          item.complete = complete;
+          saveState();
+          sendJson(response, 200, item);
+        } catch (error) {
+          sendJson(response, 400, { error: error.message });
+        }
+      });
+      return;
+    }
+
+  if (request.method === 'PATCH' && requestUrl.pathname.startsWith('/api/skill-gaps/')) {
+    const id = Number(requestUrl.pathname.split('/').pop());
+    let body = '';
+    request.on('data', (chunk) => { body += chunk; });
+    request.on('end', () => {
+      try {
+        const { progress } = JSON.parse(body);
+          const userData = currentUser ? getUserData(currentUser.email) : getUserData(authUser.email);
+          const gap = (userData.skillGaps || []).find((item) => item.id === id);
+          if (!gap || !Number.isInteger(progress) || progress < 0 || progress > 100) throw new Error('Invalid skill-gap update');
+          gap.progress = progress;
+          saveState();
+          sendJson(response, 200, gap);
+        } catch (error) {
+          sendJson(response, 400, { error: error.message });
+        }
+      });
+      return;
+    }
+
+  if (request.method === 'PATCH' && requestUrl.pathname.startsWith('/api/applications/')) {
+    const id = Number(requestUrl.pathname.split('/').pop());
+    let body = '';
+    request.on('data', (chunk) => { body += chunk; });
+    request.on('end', () => {
+      try {
+        const updates = JSON.parse(body);
+          if (!currentUser) { sendJson(response, 401, { error: 'Authentication required' }); return; }
+          const userData = getUserData(currentUser.email);
+          const application = (userData.applications || []).find((item) => item.id === id);
+          if (!application) throw new Error('Invalid application update');
+          if (updates.status && ['Saved', 'Applied', 'Interview', 'Offer'].includes(updates.status)) application.status = updates.status;
+          if (typeof updates.note === 'string') application.note = updates.note.slice(0, 500);
+          if (!updates.status && typeof updates.note !== 'string') throw new Error('Invalid application update');
+          application.updated = 'Just now';
+          if (updates.status) userData.notifications.unshift({ id: Date.now(), title: 'Application updated', detail: `${application.role} moved to ${application.status}.`, time: 'Just now', unread: true });
+          saveState();
+          sendJson(response, 200, application);
+        } catch (error) {
+          sendJson(response, 400, { error: error.message });
+        }
+      });
+      return;
+    }
+
+    if (request.method === 'DELETE' && requestUrl.pathname.startsWith('/api/applications/')) {
+      if (!currentUser) { sendJson(response, 401, { error: 'Authentication required' }); return; }
+      const id = Number(requestUrl.pathname.split('/').pop());
+      const userData = getUserData(currentUser.email);
+      const index = (userData.applications || []).findIndex((item) => item.id === id);
+      if (index === -1) { sendJson(response, 404, { error: 'Application not found' }); return; }
+      (userData.applications || []).splice(index, 1);
+      saveState();
+      sendJson(response, 200, { deleted: true });
+      return;
+    }
+
+  // Admin endpoints (RBAC protected)
+  if (requestUrl.pathname.startsWith('/api/admin')) {
+    // Require admin for all admin endpoints
+    if (!currentUser) { sendJson(response, 401, { error: 'Authentication required' }); return; }
+    if (!ensureRole(currentUser, 'admin')) { sendJson(response, 403, { error: 'Admin role required' }); return; }
+
+    // List all users (email, name, role)
+    if (request.method === 'GET' && requestUrl.pathname === '/api/admin/users') {
+      const list = (users || []).map(u => ({ email: u.email, name: u.name, role: u.role || 'student' }));
+      sendJson(response, 200, { users: list });
+      return;
+    }
+
+    // Employer helper endpoints (admin can also view)
+    if (request.method === 'GET' && requestUrl.pathname === '/api/admin/employer-stats') {
+      // return counts by role
+      const counts = { student: 0, industry: 0, admin: 0 };
+      (users || []).forEach(u => { const r = u.role || 'student'; counts[r] = (counts[r] || 0) + 1 });
+      sendJson(response, 200, { counts });
+      return;
+    }
+    // Admin: list all offers across users (aggregated)
+    if (request.method === 'GET' && requestUrl.pathname === '/api/admin/offers') {
+      if (!currentUser) { sendJson(response, 401, { error: 'Authentication required' }); return; }
+      if (!ensureRole(currentUser, 'admin')) { sendJson(response, 403, { error: 'Admin role required' }); return; }
+      const allOffers = [];
+      for (const email of Object.keys(usersData || {})) {
+        const ud = usersData[email];
+        if (ud && Array.isArray(ud.offers)) {
+          for (const o of ud.offers) {
+            allOffers.push(Object.assign({ candidateEmail: email }, o));
+          }
+        }
+      }
+      sendJson(response, 200, { offers: allOffers });
+      return;
+    }
+    // Admin: view and manage email queue
+    if (request.method === 'GET' && requestUrl.pathname === '/api/admin/email-queue') {
+      if (!currentUser) { sendJson(response, 401, { error: 'Authentication required' }); return; }
+      if (!ensureRole(currentUser, 'admin')) { sendJson(response, 403, { error: 'Admin role required' }); return; }
+      sendJson(response, 200, { queue: savedState.emailQueue || [] });
+      return;
+    }
+    if (request.method === 'POST' && requestUrl.pathname === '/api/admin/email-queue/reenqueue') {
+      if (!currentUser) { sendJson(response, 401, { error: 'Authentication required' }); return; }
+      if (!ensureRole(currentUser, 'admin')) { sendJson(response, 403, { error: 'Admin role required' }); return; }
+      let body = '';
+      request.on('data', chunk => { body += chunk; });
+      request.on('end', () => {
+        try {
+          const { offerId, inviteId } = JSON.parse(body || '{}');
+          if (!offerId && !inviteId) throw new Error('offerId or inviteId required');
+          savedState.emailQueue = savedState.emailQueue || [];
+          if (offerId) {
+            // find the offer across users
+            let found = null;
+            for (const email of Object.keys(usersData || {})) {
+              const ud = usersData[email];
+              if (ud && Array.isArray(ud.offers)) {
+                const o = ud.offers.find(x => x.id === offerId);
+                if (o) { found = { offer: o, email }; break; }
+              }
+            }
+            if (!found) throw new Error('Offer not found');
+            // push a fresh queue job
+            const mailOpts = { from: process.env.SMTP_FROM || (savedState.smtp && savedState.smtp.from) || 'no-reply@skillbridge.ai', to: found.email, subject: `Offer: ${found.offer.title} at ${found.offer.company}`, text: (found.offer.letter || '') + '\n\nSent via SkillBridge.' };
+            const job = { id: Date.now(), type: 'offer', offerId: found.offer.id, jobId: found.offer.jobId, candidateEmail: found.email, mailOpts, attempts: 0, maxAttempts: Number(process.env.SMTP_RETRY || (savedState.smtp && savedState.smtp.retries) || 3), baseDelay: Number(process.env.SMTP_RETRY_DELAY_MS || (savedState.smtp && savedState.smtp.retryDelayMs) || 1000), nextRun: Date.now() };
+            savedState.emailQueue.push(job);
+            addAudit('email_queue_reenqueue', currentUser.email, found.email, { offerId: found.offer.id, queueId: job.id });
+            saveState();
+            sendJson(response, 200, { queued: true, jobId: job.id });
+            return;
+          }
+          if (inviteId) {
+            const inv = (savedState.companyInvites || []).find(i => i.id === inviteId);
+            if (!inv) throw new Error('Invite not found');
+            // generate a fresh token for re-sending and replace stored hash
+            const newToken = crypto.randomBytes(12).toString('hex');
+            inv.tokenHash = hashToken(newToken);
+            inv.emailSent = false; inv.emailError = null;
+            const mailOpts = { from: process.env.SMTP_FROM || (savedState.smtp && savedState.smtp.from) || 'no-reply@skillbridge.ai', to: inv.inviteeEmail, subject: `You're invited to join ${inv.companyName} on SkillBridge`, text: `You have been invited by ${inv.inviterEmail} to join ${inv.companyName}. Use token: ${newToken} to accept.` };
+            const job = { id: Date.now(), type: 'invite', inviteId: inv.id, inviteeEmail: inv.inviteeEmail, mailOpts, attempts: 0, maxAttempts: Number(process.env.SMTP_RETRY || (savedState.smtp && savedState.smtp.retries) || 3), baseDelay: Number(process.env.SMTP_RETRY_DELAY_MS || (savedState.smtp && savedState.smtp.retryDelayMs) || 1000), nextRun: Date.now() };
+            savedState.emailQueue.push(job);
+            addAudit('email_queue_reenqueue', currentUser.email, inv.inviteeEmail, { inviteId: inv.id, queueId: job.id });
+            saveState();
+            sendJson(response, 200, { queued: true, jobId: job.id });
+            return;
+          }
+        } catch (e) { sendJson(response, 400, { error: e.message }); }
+      });
+      return;
+    }
+    // Admin: update SMTP settings (POST)
+    if (request.method === 'POST' && requestUrl.pathname === '/api/admin/smtp') {
+      if (!currentUser) { sendJson(response, 401, { error: 'Authentication required' }); return; }
+      if (!ensureRole(currentUser, 'admin')) { sendJson(response, 403, { error: 'Admin role required' }); return; }
+      let body = '';
+      request.on('data', chunk => { body += chunk; });
+      request.on('end', () => {
+        try {
+          const { host, port, user, pass, from, retries, retryDelayMs } = JSON.parse(body || '{}');
+          if (!host) {
+            // clear SMTP
+            savedState.smtp = null;
+          } else {
+            savedState.smtp = { host: host || null, port: port ? Number(port) : null, user: user || null, pass: pass || null, from: from || null, retries: retries ? Number(retries) : undefined, retryDelayMs: retryDelayMs ? Number(retryDelayMs) : undefined };
+          }
+          saveState();
+          addAudit('smtp_update', currentUser.email, null, { host: savedState.smtp && savedState.smtp.host ? 'set' : 'cleared' });
+          sendJson(response, 200, { smtp: savedState.smtp ? { host: savedState.smtp.host || null, from: savedState.smtp.from || null, retries: savedState.smtp.retries || null, retryDelayMs: savedState.smtp.retryDelayMs || null } : null });
+        } catch (e) { sendJson(response, 400, { error: e.message }); }
+      });
+      return;
+    }
+    // Admin: get current SMTP settings (GET)
+    if (request.method === 'GET' && requestUrl.pathname === '/api/admin/smtp') {
+      if (!currentUser) { sendJson(response, 401, { error: 'Authentication required' }); return; }
+      if (!ensureRole(currentUser, 'admin')) { sendJson(response, 403, { error: 'Admin role required' }); return; }
+      sendJson(response, 200, { smtp: savedState.smtp ? { host: savedState.smtp.host || null, port: savedState.smtp.port || null, user: savedState.smtp.user || null, from: savedState.smtp.from || null, retries: savedState.smtp.retries || null, retryDelayMs: savedState.smtp.retryDelayMs || null } : null });
+      return;
+    }
+    // Employer job posting endpoints (industry users and admins)
+    // Create a job: POST /api/employer/jobs
+    if (request.method === 'POST' && requestUrl.pathname === '/api/employer/jobs') {
+      if (!currentUser) { sendJson(response, 401, { error: 'Authentication required' }); return; }
+      // only industry users or admins may create jobs
+      const role = getUserRole(currentUser.email);
+      if (role !== 'industry' && role !== 'admin') { sendJson(response, 403, { error: 'Only industry users may create jobs' }); return; }
+      let body = '';
+      request.on('data', chunk => { body += chunk; });
+      request.on('end', () => {
+        try {
+          const { title, company, description, minScore } = JSON.parse(body || '{}');
+          if (!title || !company) throw new Error('title and company are required');
+          const job = { id: Date.now(), title, company, description: description || '', owner: currentUser.email, minScore: Number(minScore) || 0, createdAt: new Date().toISOString() };
+          const ownerData = getUserData(currentUser.email);
+          if (!ownerData.employerJobs) ownerData.employerJobs = [];
+          ownerData.employerJobs.unshift(job);
+          addAudit('job_create', currentUser.email, null, { jobId: job.id, title: job.title });
+          saveState();
+          sendJson(response, 201, job);
+        } catch (err) { sendJson(response, 400, { error: err.message }); }
+      });
+      return;
+    }
+
+    // List jobs for current employer: GET /api/employer/jobs
+    if (request.method === 'GET' && requestUrl.pathname === '/api/employer/jobs') {
+      if (!currentUser) { sendJson(response, 401, { error: 'Authentication required' }); return; }
+      const role = getUserRole(currentUser.email);
+      if (role !== 'industry' && role !== 'admin') { sendJson(response, 403, { error: 'Only industry users may view their jobs' }); return; }
+      const ownerData = getUserData(currentUser.email);
+      sendJson(response, 200, { jobs: ownerData.employerJobs || [] });
+      return;
+    }
+
+    // Get matches for a job: GET /api/employer/jobs/:id/matches
+    if (request.method === 'GET' && requestUrl.pathname.match('^/api/employer/jobs/\\d+/matches$')) {
+      if (!currentUser) { sendJson(response, 401, { error: 'Authentication required' }); return; }
+      const role = getUserRole(currentUser.email);
+      if (role !== 'industry' && role !== 'admin') { sendJson(response, 403, { error: 'Only industry users may view matches' }); return; }
+      const parts = requestUrl.pathname.split('/');
+      const jobId = Number(parts[3]);
+      const ownerData = getUserData(currentUser.email);
+      const job = (ownerData.employerJobs || []).find(j => j.id === jobId);
+      if (!job) { sendJson(response, 404, { error: 'Job not found' }); return; }
+      // Build candidate list: students first by score desc, then industry by score desc
+      const candidates = [];
+      for (const u of users) {
+        const r = u.role || 'student';
+        const ud = usersData[u.email] || defaultUserData(u.email);
+        // compute score: use assessmentState.lastResult.score if present, else average skillMap level
+        let score = 0;
+        if (ud.assessmentState && ud.assessmentState.lastResult && typeof ud.assessmentState.lastResult.score === 'number') score = ud.assessmentState.lastResult.score;
+        else if (Array.isArray(ud.skillMap) && ud.skillMap.length) score = Math.round(ud.skillMap.reduce((s,x)=>s+(x.level||0),0)/ud.skillMap.length);
+        // Only include candidates meeting minScore
+        if (score < (job.minScore || 0)) continue;
+        candidates.push({ email: u.email, name: u.name || u.email.split('@')[0], role: r, score, profile: ud.profile || {} });
+      }
+      // sort: students first by score desc, then industry by score desc
+      candidates.sort((a,b)=>{
+        if (a.role === b.role) return b.score - a.score;
+        if (a.role === 'student' && b.role !== 'student') return -1;
+        if (b.role === 'student' && a.role !== 'student') return 1;
+        return b.score - a.score;
+      });
+      sendJson(response, 200, { matches: candidates.slice(0,50) });
+      return;
+    }
+
+    // Send an offer to a candidate: POST /api/employer/jobs/:id/offer
+    if (request.method === 'POST' && requestUrl.pathname.match('^/api/employer/jobs/\\d+/offer$')) {
+      if (!currentUser) { sendJson(response, 401, { error: 'Authentication required' }); return; }
+      const role = getUserRole(currentUser.email);
+      if (role !== 'industry' && role !== 'admin') { sendJson(response, 403, { error: 'Only industry users may send offers' }); return; }
+      const parts = requestUrl.pathname.split('/');
+      const jobId = Number(parts[3]);
+      const ownerData = getUserData(currentUser.email);
+      const job = (ownerData.employerJobs || []).find(j => j.id === jobId);
+      if (!job) { sendJson(response, 404, { error: 'Job not found' }); return; }
+      let body = '';
+      request.on('data', chunk => { body += chunk; });
+      request.on('end', () => {
+        try {
+          const { candidateEmail, offerLetter, salary } = JSON.parse(body || '{}');
+          if (!candidateEmail) throw new Error('candidateEmail required');
+          const candEmail = candidateEmail.trim().toLowerCase();
+          const targetUser = (users || []).find(x=> (x.email||'').toLowerCase()===candEmail);
+          if (!targetUser) throw new Error('Candidate not found');
+          // create offer object
+          const offer = { id: Date.now(), jobId, title: job.title, company: job.company, from: currentUser.email, to: candEmail, salary: salary || null, letter: offerLetter || '', createdAt: new Date().toISOString(), emailSent: false };
+          // push to candidate's offers and notifications
+          const candData = getUserData(candEmail);
+          if (!candData.offers) candData.offers = [];
+          candData.offers.unshift(offer);
+          if (!candData.notifications) candData.notifications = [];
+          candData.notifications.unshift({ id: Date.now(), title: 'New offer', detail: `${job.title} at ${job.company} - Open your Offers to view details.`, time: 'Just now', unread: true });
+          addAudit('offer_queued', currentUser.email, candEmail, { jobId, offerId: offer.id });
+          // Build email queue job instead of sending inline — processed by background worker
+          const smtpConfigFromState = (savedState && savedState.smtp) || null;
+          const maxAttempts = Number(process.env.SMTP_RETRY || (smtpConfigFromState && smtpConfigFromState.retries) || 3);
+          const baseDelay = Number(process.env.SMTP_RETRY_DELAY_MS || (smtpConfigFromState && smtpConfigFromState.retryDelayMs) || 1000);
+          const mailOpts = { from: process.env.SMTP_FROM || (smtpConfigFromState && smtpConfigFromState.from) || 'no-reply@skillbridge.ai', to: candEmail, subject: `Offer: ${job.title} at ${job.company}`, text: (offer.letter || '') + '\n\nSent via SkillBridge.' };
+          const queueJob = { id: Date.now(), type: 'offer', offerId: offer.id, jobId, candidateEmail: candEmail, mailOpts, attempts: 0, maxAttempts: maxAttempts, baseDelay: baseDelay, nextRun: Date.now() };
+          if (!savedState.emailQueue) savedState.emailQueue = [];
+          savedState.emailQueue.push(queueJob);
+          addAudit('email_queue_push', currentUser.email, candEmail, { jobId, offerId: offer.id, queueId: queueJob.id });
+          saveState();
+          // Respond immediately — job will be processed asynchronously by background worker
+          sendJson(response, 201, { offer, queued: true });
+        } catch (err) { sendJson(response, 400, { error: err.message }); }
+      });
+      return;
+    }
+
+    // Company invites: POST /api/company/:id/invite (company owner or admin)
+    if (request.method === 'POST' && requestUrl.pathname.match(/^\/api\/company\/[^\/]+\/invite$/)) {
+      if (!currentUser) { sendJson(response, 401, { error: 'Authentication required' }); return; }
+      let body = '';
+      request.on('data', chunk => { body += chunk; });
+      request.on('end', () => {
+        try {
+          const parts = requestUrl.pathname.split('/');
+          const companyId = parts[2];
+          const { inviteeEmail, role } = JSON.parse(body || '{}');
+          if (!inviteeEmail) throw new Error('inviteeEmail required');
+          const company = (savedState.companies || []).find(c => String(c.id) === String(companyId));
+          if (!company) throw new Error('Company not found');
+          if (!ensureRole(currentUser, 'admin') && company.owner !== currentUser.email) throw new Error('Only company owner or admin can invite');
+          const token = crypto.randomBytes(12).toString('hex');
+          const invite = { id: 'invite_' + Date.now(), companyId: company.id, companyName: company.name, inviterEmail: currentUser.email, inviteeEmail: inviteeEmail.trim().toLowerCase(), role: role || 'industry', tokenHash: hashToken(token), createdAt: Date.now(), accepted: false, emailSent: false, emailAttempts: [] };
+          savedState.companyInvites = savedState.companyInvites || [];
+          savedState.companyInvites.push(invite);
+          // enqueue invite email
+          savedState.emailQueue = savedState.emailQueue || [];
+          const mailOpts = { from: process.env.SMTP_FROM || (savedState.smtp && savedState.smtp.from) || 'no-reply@skillbridge.ai', to: invite.inviteeEmail, subject: `You're invited to join ${company.name}`, text: `You have been invited by ${currentUser.email} to join ${company.name} on SkillBridge. Use token: ${token} to accept at /register or via the Accept Invite flow.` };
+          const job = { id: Date.now(), type: 'invite', inviteId: invite.id, inviteeEmail: invite.inviteeEmail, mailOpts, attempts: 0, maxAttempts: Number(process.env.SMTP_RETRY || (savedState.smtp && savedState.smtp.retries) || 3), baseDelay: Number(process.env.SMTP_RETRY_DELAY_MS || (savedState.smtp && savedState.smtp.retryDelayMs) || 1000), nextRun: Date.now() };
+          savedState.emailQueue.push(job);
+          addAudit('company_invite_created', currentUser.email, invite.inviteeEmail, { inviteId: invite.id, companyId: company.id });
+          saveState();
+          sendJson(response, 200, { ok: true, inviteId: invite.id });
+        } catch (e) { sendJson(response, 400, { error: e.message }); }
+      });
+      return;
+    }
+
+    // List invites for current user's company: GET /api/company/invites
+    if (request.method === 'GET' && requestUrl.pathname === '/api/company/invites') {
+      if (!currentUser) { sendJson(response, 401, { error: 'Authentication required' }); return; }
+      const invites = (savedState.companyInvites || []).filter(i => i.inviterEmail === currentUser.email || i.inviteeEmail === currentUser.email || (currentUser.companyId && String(i.companyId) === String(currentUser.companyId)));
+      sendJson(response, 200, { invites });
+      return;
+    }
+
+    // Accept invite: POST /api/company/invite/accept { token, email }
+    if (request.method === 'POST' && requestUrl.pathname === '/api/company/invite/accept') {
+      let body = '';
+      request.on('data', chunk => { body += chunk; });
+      request.on('end', () => {
+        try {
+          const { token, email } = JSON.parse(body || '{}');
+          if (!token || !email) throw new Error('token and email required');
+          const inv = (savedState.companyInvites || []).find(i => i.tokenHash === hashToken(token) && !i.accepted && i.inviteeEmail === email.trim().toLowerCase());
+          if (!inv) throw new Error('Invite not found or already accepted');
+          const qemail = email.trim().toLowerCase();
+          let user = users.find(u => (u.email||'').toLowerCase() === qemail);
+          if (!user) {
+            // create a lightweight user - require password reset later
+            const salt = crypto.randomBytes(8).toString('hex');
+            const pwd = crypto.randomBytes(6).toString('hex');
+            const hash = crypto.scryptSync(pwd, salt, 64).toString('hex');
+            const newUser = { email: qemail, name: qemail.split('@')[0], salt, passwordHash: hash, role: inv.role || 'industry', companyId: inv.companyId };
+            users.push(newUser);
+            usersData[qemail] = defaultUserData(qemail);
+            usersData[qemail].company = { id: inv.companyId, name: inv.companyName };
+            addAudit('company_invite_accept_create_user', qemail, inv.inviterEmail, { inviteId: inv.id });
+          } else {
+            user.companyId = inv.companyId;
+            user.role = inv.role || user.role || 'industry';
+            usersData[qemail] = usersData[qemail] || defaultUserData(qemail);
+            usersData[qemail].company = { id: inv.companyId, name: inv.companyName };
+            addAudit('company_invite_accept_existing_user', qemail, inv.inviterEmail, { inviteId: inv.id });
+          }
+          inv.accepted = true;
+          inv.acceptedAt = Date.now();
+          saveState();
+          sendJson(response, 200, { accepted: true });
+        } catch (e) { sendJson(response, 400, { error: e.message }); }
+      });
+      return;
+    }
+
+    // Company dashboard: GET /api/company/:id/dashboard (owner or company member)
+    if (request.method === 'GET' && requestUrl.pathname.match('^/api/company/[^/]+/dashboard$')) {
+      if (!currentUser) { sendJson(response, 401, { error: 'Authentication required' }); return; }
+      const parts = requestUrl.pathname.split('/');
+      const companyId = parts[2];
+      const company = (savedState.companies || []).find(c => String(c.id) === String(companyId));
+      if (!company) { sendJson(response, 404, { error: 'Company not found' }); return; }
+      // Only allow company owner, admin, or members
+      if (!ensureRole(currentUser, 'admin') && currentUser.companyId !== company.id && company.owner !== currentUser.email) { sendJson(response, 403, { error: 'Not authorized' }); return; }
+      // aggregate company jobs and offers
+      const jobs = [];
+      for (const u of users) {
+        if (u.companyId && String(u.companyId) === String(company.id)) {
+          const ud = usersData[u.email] || defaultUserData(u.email);
+          if (Array.isArray(ud.employerJobs)) jobs.push(...ud.employerJobs.map(j=>({ ...j, owner: u.email })));
+        }
+      }
+      const offers = [];
+      for (const e of Object.keys(usersData || {})) {
+        const ud = usersData[e];
+        if (Array.isArray(ud.offers)) {
+          for (const ofr of ud.offers) {
+            if (ofr.company && String(ofr.company.id) === String(company.id) || ofr.company === company.name) offers.push({ to: e, offer: ofr });
+          }
+        }
+      }
+      sendJson(response, 200, { company: { id: company.id, name: company.name, owner: company.owner }, jobs, offers });
+      return;
+    }
+
+    // Get a specific user's account + per-user data: /api/admin/user?email=someone@example.com
+    if (request.method === 'GET' && requestUrl.pathname === '/api/admin/user') {
+      const qemail = (requestUrl.searchParams.get('email') || '').trim().toLowerCase();
+      if (!qemail) { sendJson(response, 400, { error: 'email query required' }); return; }
+      const u = (users || []).find(x => (x.email||'').toLowerCase() === qemail);
+      const ud = usersData[qemail] || null;
+      sendJson(response, 200, { user: u ? { email: u.email, name: u.name, role: u.role } : null, data: ud });
+      return;
+    }
+    }
+
+    // Change a user's role (POST body: { email, role })
+    if (request.method === 'POST' && requestUrl.pathname === '/api/admin/user/role') {
+      let body = '';
+      request.on('data', chunk => { body += chunk; });
+      request.on('end', () => {
+        try {
+          const { email: e, role } = JSON.parse(body || '{}');
+          const qemail = (e||'').trim().toLowerCase();
+          if (!qemail || !['admin','user'].includes(role)) throw new Error('Invalid email or role');
+          const u = (users || []).find(x => (x.email||'').toLowerCase() === qemail);
+          if (!u) throw new Error('User not found');
+          const oldRole = u.role || 'user';
+          u.role = role;
+          addAudit('role_change', currentUser.email, qemail, { from: oldRole, to: role });
+          saveState();
+          sendJson(response, 200, { email: u.email, role: u.role });
+        } catch (err) {
+          sendJson(response, 400, { error: err.message });
+        }
+      });
+      return;
+    }
+
+    // Update user profile (POST body: { email, name })
+    if (request.method === 'POST' && requestUrl.pathname === '/api/admin/user/update') {
+      let body = '';
+      request.on('data', chunk => { body += chunk; });
+      request.on('end', () => {
+        try {
+          const { email: e, name } = JSON.parse(body || '{}');
+          const qemail = (e||'').trim().toLowerCase();
+          if (!qemail || !name) throw new Error('Invalid email or name');
+          const u = (users || []).find(x => (x.email||'').toLowerCase() === qemail);
+          if (!u) throw new Error('User not found');
+          const oldName = u.name;
+          u.name = name;
+          if (usersData[qemail] && usersData[qemail].profile) usersData[qemail].profile.name = name;
+          addAudit('profile_update', currentUser.email, qemail, { from: oldName, to: name });
+          saveState();
+          sendJson(response, 200, { email: u.email, name: u.name });
+        } catch (err) { sendJson(response, 400, { error: err.message }); }
+      });
+      return;
+    }
+
+    // Reset a user's password (POST body: { email, password })
+    if (request.method === 'POST' && requestUrl.pathname === '/api/admin/user/reset-password') {
+      let body = '';
+      request.on('data', chunk => { body += chunk; });
+      request.on('end', () => {
+        try {
+          const { email: e, password } = JSON.parse(body || '{}');
+          const qemail = (e||'').trim().toLowerCase();
+          if (!qemail || !password || password.length < 6) throw new Error('Invalid email or password');
+          const u = (users || []).find(x => (x.email||'').toLowerCase() === qemail);
+          if (!u) throw new Error('User not found');
+          const { salt, hash } = hashPassword(password);
+          u.salt = salt; u.passwordHash = hash;
+          addAudit('password_reset', currentUser.email, qemail, { by: currentUser.email });
+          saveState();
+          sendJson(response, 200, { email: u.email, reset: true });
+        } catch (err) { sendJson(response, 400, { error: err.message }); }
+      });
+      return;
+    }
+
+    // Soft-delete user (admin) - moves user to deletedUsers for possible undo
+    if (request.method === 'DELETE' && requestUrl.pathname === '/api/admin/user') {
+      const qemail = (requestUrl.searchParams.get('email') || '').trim().toLowerCase();
+      if (!qemail) { sendJson(response, 400, { error: 'email query required' }); return; }
+      const idx = (users || []).findIndex(x => (x.email||'').toLowerCase() === qemail);
+      if (idx === -1) { sendJson(response, 404, { error: 'User not found' }); return; }
+      const removed = users.splice(idx,1)[0];
+      const backup = { user: removed, data: usersData[qemail] || null, deletedAt: new Date().toISOString(), actor: currentUser.email };
+      deletedUsers[qemail] = backup;
+      delete usersData[qemail];
+      addAudit('user_delete', currentUser.email, qemail, { deletedAt: backup.deletedAt });
+      saveState();
+      sendJson(response, 200, { deleted: true, undoWindowSeconds: 300 });
+      return;
+    }
+
+    // List soft-deleted users
+    if (request.method === 'GET' && requestUrl.pathname === '/api/admin/deleted') {
+      const list = Object.keys(deletedUsers).map(email => ({ email, deletedAt: deletedUsers[email].deletedAt, actor: deletedUsers[email].actor }));
+      sendJson(response, 200, { deleted: list });
+      return;
+    }
+
+    // Undo delete (POST body: { email })
+    if (request.method === 'POST' && requestUrl.pathname === '/api/admin/user/undo-delete') {
+      let body = '';
+      request.on('data', chunk => { body += chunk; });
+      request.on('end', () => {
+        try {
+          const { email: e } = JSON.parse(body || '{}');
+          const qemail = (e||'').trim().toLowerCase();
+          if (!qemail) throw new Error('Invalid email');
+          const backup = deletedUsers[qemail];
+          if (!backup) throw new Error('No deleted record for that email');
+          // restore
+          users.push(backup.user);
+          if (backup.data) usersData[qemail] = backup.data;
+          delete deletedUsers[qemail];
+          addAudit('undo_delete', currentUser.email, qemail, { restoredAt: new Date().toISOString() });
+          saveState();
+          sendJson(response, 200, { restored: true });
+        } catch (err) { sendJson(response, 400, { error: err.message }); }
+      });
+      return;
+    }
+
+    // Audit logs
+    if (request.method === 'GET' && requestUrl.pathname === '/api/admin/audit') {
+      sendJson(response, 200, { audit: auditLogs.slice(0, 200) });
+      return;
+    }
+    // Admin: list companies
+    if (request.method === 'GET' && requestUrl.pathname === '/api/admin/companies') {
+      const comps = (savedState.companies || []).map(c => ({ id: c.id, name: c.name, owner: c.owner, createdAt: c.createdAt }));
+      sendJson(response, 200, { companies: comps });
+      return;
+    }
+
+    // Admin: list invites (admin only)
+    if (request.method === 'GET' && requestUrl.pathname === '/api/admin/invites') {
+      if (!currentUser || !ensureRole(currentUser, 'admin')) { sendJson(response, 401, { error: 'Admin required' }); return; }
+      const invites = (savedState.companyInvites || []).map(i => ({ id: i.id, companyId: i.companyId, companyName: i.companyName, inviterEmail: i.inviterEmail, inviteeEmail: i.inviteeEmail, accepted: !!i.accepted, emailSent: !!i.emailSent, emailAttempts: i.emailAttempts || [] }));
+      sendJson(response, 200, { invites });
+      return;
+    }
+
+    // Admin: reissue/re-send an invite (POST body: { inviteId }) - generates a new token, updates invite tokenHash, enqueues email
+    if (request.method === 'POST' && requestUrl.pathname === '/api/admin/invites/reenqueue') {
+      if (!currentUser || !ensureRole(currentUser, 'admin')) { sendJson(response, 401, { error: 'Admin required' }); return; }
+      let body = '';
+      request.on('data', chunk => { body += chunk; });
+      request.on('end', () => {
+        try {
+          const { inviteId } = JSON.parse(body || '{}');
+          if (!inviteId) throw new Error('inviteId required');
+          const inv = (savedState.companyInvites || []).find(x => String(x.id) === String(inviteId));
+          if (!inv) throw new Error('Invite not found');
+          // generate new token and update tokenHash
+          const token = crypto.randomBytes(12).toString('hex');
+          inv.tokenHash = hashToken(token);
+          inv.emailSent = false;
+          inv.emailError = null;
+          inv.emailAttempts = inv.emailAttempts || [];
+          inv.emailAttempts.unshift({ attempt: 0, time: new Date().toISOString(), note: 'reissued by admin' });
+          // enqueue invite email
+          savedState.emailQueue = savedState.emailQueue || [];
+          const mailOpts = { from: process.env.SMTP_FROM || (savedState.smtp && savedState.smtp.from) || 'no-reply@skillbridge.ai', to: inv.inviteeEmail, subject: `You're invited to join ${inv.companyName}`, text: `You have been invited by ${inv.inviterEmail} to join ${inv.companyName} on SkillBridge. Use token: ${token} to accept at /register or via the Accept Invite flow.` };
+          const job = { id: Date.now(), type: 'invite', inviteId: inv.id, inviteeEmail: inv.inviteeEmail, mailOpts, attempts: 0, maxAttempts: Number(process.env.SMTP_RETRY || (savedState.smtp && savedState.smtp.retries) || 3), baseDelay: Number(process.env.SMTP_RETRY_DELAY_MS || (savedState.smtp && savedState.smtp.retryDelayMs) || 1000), nextRun: Date.now() };
+          savedState.emailQueue.push(job);
+          addAudit('email_queue_reenqueue', currentUser.email, inv.inviteeEmail, { inviteId: inv.id, queueId: job.id });
+          saveState();
+          sendJson(response, 200, { requeued: true, inviteId: inv.id });
+        } catch (e) { sendJson(response, 400, { error: e.message }); }
+      });
+      return;
+    }
+
+    // Admin: delete company (POST body: { id })
+    if (request.method === 'POST' && requestUrl.pathname === '/api/admin/company/delete') {
+      let body = '';
+      request.on('data', chunk => { body += chunk; });
+      request.on('end', () => {
+     try {
+       const { id } = JSON.parse(body || '{}');
+       if (!id) throw new Error('id required');
+       const idx = (savedState.companies || []).findIndex(c => c.id === id);
+       if (idx === -1) throw new Error('Company not found');
+       const removed = savedState.companies.splice(idx,1)[0];
+       // remove companyId from users
+       for (const u of users) { if (u.companyId === removed.id) delete u.companyId; }
+       for (const e of Object.keys(usersData)) { if (usersData[e] && usersData[e].company && usersData[e].company.id === removed.id) delete usersData[e].company; }
+       addAudit('company_delete', currentUser.email, null, { companyId: removed.id, name: removed.name });
+       saveState();
+       sendJson(response, 200, { deleted: true });
+     } catch (e) { sendJson(response, 400, { error: e.message }); }
+      });
+      return;
+    }
+
+  if (request.method === 'POST' && requestUrl.pathname === '/api/assistant') {
+    let body = '';
+    request.on('data', (chunk) => { body += chunk; });
+    request.on('end', () => {
+      try {
+        const question = JSON.parse(body).question;
+        if (!question || typeof question !== 'string') throw new Error('Question is required');
+        sendJson(response, 200, {
+          answer: `For your ${dashboard.goal} goal, focus next on ${dashboard.gaps[0].name} and Docker. Your current placement readiness is ${dashboard.metrics.readiness}/100.`
+        });
+      } catch (error) {
+        sendJson(response, 400, { error: error.message });
+      }
+    });
+    return;
+  }
+
+  // Debug endpoint: accept an invite by token (dev-only)
+  if (request.method === 'POST' && requestUrl.pathname === '/api/debug/accept-invite') {
+    let body = '';
+    request.on('data', chunk => { body += chunk; });
+    request.on('end', () => {
+      try {
+        const { token, email } = JSON.parse(body || '{}');
+        if (!token || !email) throw new Error('token and email required');
+        const inv = (savedState.companyInvites || []).find(i => i.tokenHash === hashToken(token) && !i.accepted && i.inviteeEmail === email.trim().toLowerCase());
+        if (!inv) throw new Error('Invite not found or already accepted');
+        const qemail = email.trim().toLowerCase();
+        let user = users.find(u => (u.email||'').toLowerCase() === qemail);
+        if (!user) {
+          // create a lightweight user - require password reset later
+          const salt = crypto.randomBytes(8).toString('hex');
+          const pwd = crypto.randomBytes(6).toString('hex');
+          const hash = crypto.scryptSync(pwd, salt, 64).toString('hex');
+          const newUser = { email: qemail, name: qemail.split('@')[0], salt, passwordHash: hash, role: inv.role || 'industry', companyId: inv.companyId };
+          users.push(newUser);
+          usersData[qemail] = defaultUserData(qemail);
+          usersData[qemail].company = { id: inv.companyId, name: inv.companyName };
+          addAudit('company_invite_accept_create_user_debug', qemail, inv.inviterEmail, { inviteId: inv.id });
+        } else {
+          user.companyId = inv.companyId;
+          user.role = inv.role || user.role || 'industry';
+          usersData[qemail] = usersData[qemail] || defaultUserData(qemail);
+          usersData[qemail].company = { id: inv.companyId, name: inv.companyName };
+          addAudit('company_invite_accept_existing_user_debug', qemail, inv.inviterEmail, { inviteId: inv.id });
+        }
+        inv.accepted = true; inv.acceptedAt = Date.now();
+        saveState();
+        sendJson(response, 200, { accepted: true });
+      } catch (e) { sendJson(response, 400, { error: e.message }); }
+    });
+    return;
+  }
+
+  // Protect /student/* routes: require authentication to access SPA student paths
+  if (request.method === 'GET' && requestUrl.pathname.startsWith('/student')) {
+    if (!currentUser) {
+      // redirect to root/login
+      response.writeHead(302, { Location: '/' });
+      response.end();
+      return;
+    }
+    // Serve frontend index for SPA routes
+    try {
+      const indexPath = path.resolve(frontendDir, 'index.html');
+      if (fs.existsSync(indexPath)) {
+        response.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+        fs.createReadStream(indexPath).pipe(response);
+        return;
+      }
+    } catch (e) { /* fall through to static serve fallback */ }
+  }
+
+  if (request.method === 'GET') serveStatic(request, response);
+  else sendJson(response, 405, { error: 'Method not allowed' });
+});
+
+// FILE-BACKED QUEUE: robust local queue implementation with concurrency, atomic writes, and graceful shutdown
+const queueFile = path.join(serverDir, 'emailQueue.json');
+let queueProcessing = false;
+let workerIntervalHandle = null;
+let shuttingDown = false;
+const QUEUE_CONCURRENCY = Number(process.env.QUEUE_CONCURRENCY || (savedState && savedState.queueConcurrency) || 2);
+
+function loadQueueFromFile() {
+  try {
+    if (fs.existsSync(queueFile)) {
+      const raw = fs.readFileSync(queueFile, 'utf8');
+      const arr = JSON.parse(raw || '[]');
+      savedState.emailQueue = Array.isArray(arr) ? arr : [];
+    } else {
+      savedState.emailQueue = savedState.emailQueue || [];
+    }
+  } catch (e) {
+    savedState.emailQueue = savedState.emailQueue || [];
+  }
+}
+
+function saveQueueToFile() {
+  try {
+    const tmp = queueFile + '.tmp';
+    fs.writeFileSync(tmp, JSON.stringify(savedState.emailQueue || [], null, 2));
+    fs.renameSync(tmp, queueFile);
+  } catch (e) {
+    // ignore file errors
+  }
+}
+
+// ensure queue loaded from disk at startup
+loadQueueFromFile();
+
+async function processEmailQueueTick() {
+  if (queueProcessing || shuttingDown) return;
+  queueProcessing = true;
+  try {
+    savedState.emailQueue = savedState.emailQueue || [];
+    const now = Date.now();
+    // pick up to QUEUE_CONCURRENCY ready jobs that are not in_progress
+    const readyJobs = [];
+    for (const job of savedState.emailQueue) {
+      if (readyJobs.length >= QUEUE_CONCURRENCY) break;
+      if ((job.nextRun || 0) <= now && !(job.inProgress)) readyJobs.push(job);
+    }
+    if (readyJobs.length === 0) { queueProcessing = false; return; }
+    // mark jobs as inProgress and persist quickly
+    for (const job of readyJobs) { job.inProgress = true; job.lockedAt = Date.now(); }
+    saveQueueToFile();
+
+    // process concurrently
+    await Promise.all(readyJobs.map(async (job) => {
+      try {
+        // validate job
+        if (!job || (job.type !== 'offer' && job.type !== 'invite' && job.type !== 'reset' && job.type !== 'verify')) {
+          // remove invalid/unknown job
+          const idx = savedState.emailQueue.findIndex(j => j.id === job.id);
+          if (idx !== -1) savedState.emailQueue.splice(idx,1);
+          saveQueueToFile();
+          return;
+        }
+
+        // Handle invite jobs
+        if (job.type === 'invite') {
+          const inv = (savedState.companyInvites || []).find(i => i.id === job.inviteId);
+          if (!inv) {
+            const idx = savedState.emailQueue.findIndex(j => j.id === job.id);
+            if (idx !== -1) savedState.emailQueue.splice(idx,1);
+            addAudit('invite_job_orphaned', 'system', job.inviteeEmail || null, { jobId: job.id, inviteId: job.inviteId });
+            saveQueueToFile();
+            return;
+          }
+          // check SMTP config
+          const smtp = savedState.smtp || null;
+          const smtpConfig = { host: process.env.SMTP_HOST || (smtp && smtp.host), port: Number(process.env.SMTP_PORT || (smtp && smtp.port) || 0), user: process.env.SMTP_USER || (smtp && smtp.user), pass: process.env.SMTP_PASS || (smtp && smtp.pass), from: process.env.SMTP_FROM || (smtp && smtp.from) };
+          const hasSmtp = smtpConfig.host && smtpConfig.port && (smtpConfig.user || smtpConfig.pass || smtpConfig.from);
+          if (!hasSmtp) {
+            inv.emailSent = false;
+            inv.emailError = 'SMTP not configured';
+            inv.emailAttempts = inv.emailAttempts || [];
+            inv.emailAttempts.unshift({ attempt: (job.attempts || 0) + 1, time: new Date().toISOString(), success: false, error: 'SMTP not configured' });
+            const idx = savedState.emailQueue.findIndex(j => j.id === job.id);
+            if (idx !== -1) savedState.emailQueue.splice(idx,1);
+            addAudit('invite_job_no_smtp', 'system', inv.inviteeEmail, { jobId: job.id, inviteId: inv.id });
+            saveQueueToFile();
+            return;
+          }
+
+          const nodemailer = require('nodemailer');
+          const transporter = nodemailer.createTransport({ host: smtpConfig.host, port: smtpConfig.port, secure: smtpConfig.port === 465, auth: smtpConfig.user ? { user: smtpConfig.user, pass: smtpConfig.pass } : undefined });
+
+          job.attempts = job.attempts || 0;
+          const maxAttempts = job.maxAttempts || 3;
+          const baseDelay = job.baseDelay || 1000;
+          let success = false;
+          let lastError = null;
+          while (job.attempts < maxAttempts && !success && !shuttingDown) {
+            job.attempts += 1;
+            try {
+              const info = await transporter.sendMail(job.mailOpts);
+              inv.emailSent = true;
+              inv.emailInfo = info && info.messageId ? String(info.messageId) : null;
+              inv.emailAttempts = inv.emailAttempts || [];
+              inv.emailAttempts.unshift({ attempt: job.attempts, time: new Date().toISOString(), success: true, info: inv.emailInfo });
+              addAudit('invite_email_sent_success', 'system', inv.inviteeEmail, { jobId: job.id, inviteId: inv.id, attempt: job.attempts });
+              success = true;
+              const idx = savedState.emailQueue.findIndex(j => j.id === job.id);
+              if (idx !== -1) savedState.emailQueue.splice(idx,1);
+              saveQueueToFile();
+              saveState();
+              break;
+            } catch (e) {
+              lastError = String(e && e.message ? e.message : e);
+              inv.emailAttempts = inv.emailAttempts || [];
+              inv.emailAttempts.unshift({ attempt: job.attempts, time: new Date().toISOString(), success: false, error: lastError });
+              addAudit('invite_email_attempt', 'system', inv.inviteeEmail, { jobId: job.id, inviteId: inv.id, attempt: job.attempts, error: lastError });
+              saveState();
+              if (job.attempts >= maxAttempts) {
+                inv.emailSent = false;
+                inv.emailError = lastError;
+                addAudit('invite_email_sent_failed', 'system', inv.inviteeEmail, { jobId: job.id, inviteId: inv.id, attempts: job.attempts, lastError });
+                const idx = savedState.emailQueue.findIndex(j => j.id === job.id);
+                if (idx !== -1) savedState.emailQueue.splice(idx,1);
+                saveQueueToFile();
+                break;
+              }
+              const delay = baseDelay * Math.pow(2, job.attempts - 1);
+              job.nextRun = Date.now() + delay;
+              job.inProgress = false;
+              const idx = savedState.emailQueue.findIndex(j => j.id === job.id);
+              if (idx !== -1) savedState.emailQueue[idx] = job;
+              saveQueueToFile();
+              break;
+            }
+          }
+          return;
+        }
+
+        // Handle reset jobs
+        if (job.type === 'reset') {
+          const reset = (savedState.passwordResets || []).find(r => r.id === job.resetId);
+          if (!reset) {
+            const idx = savedState.emailQueue.findIndex(j => j.id === job.id);
+            if (idx !== -1) savedState.emailQueue.splice(idx,1);
+            addAudit('reset_job_orphaned', 'system', job.email || null, { jobId: job.id, resetId: job.resetId });
+            saveQueueToFile();
+            return;
+          }
+          const smtp = savedState.smtp || null;
+          const smtpConfig = { host: process.env.SMTP_HOST || (smtp && smtp.host), port: Number(process.env.SMTP_PORT || (smtp && smtp.port) || 0), user: process.env.SMTP_USER || (smtp && smtp.user), pass: process.env.SMTP_PASS || (smtp && smtp.pass), from: process.env.SMTP_FROM || (smtp && smtp.from) };
+          const hasSmtp = smtpConfig.host && smtpConfig.port && (smtpConfig.user || smtpConfig.pass || smtpConfig.from);
+          if (!hasSmtp) {
+            reset.emailSent = false;
+            reset.emailError = 'SMTP not configured';
+            reset.emailAttempts = reset.emailAttempts || [];
+            reset.emailAttempts.unshift({ attempt: (job.attempts || 0) + 1, time: new Date().toISOString(), success: false, error: 'SMTP not configured' });
+            const idx = savedState.emailQueue.findIndex(j => j.id === job.id);
+            if (idx !== -1) savedState.emailQueue.splice(idx,1);
+            addAudit('reset_job_no_smtp', 'system', reset.email, { jobId: job.id, resetId: reset.id });
+            saveQueueToFile();
+            return;
+          }
+          const nodemailer = require('nodemailer');
+          const transporter = nodemailer.createTransport({ host: smtpConfig.host, port: smtpConfig.port, secure: smtpConfig.port === 465, auth: smtpConfig.user ? { user: smtpConfig.user, pass: smtpConfig.pass } : undefined });
+          job.attempts = job.attempts || 0;
+          const maxAttempts = job.maxAttempts || 3;
+          const baseDelay = job.baseDelay || 1000;
+          let success = false;
+          let lastError = null;
+          while (job.attempts < maxAttempts && !success && !shuttingDown) {
+            job.attempts += 1;
+            try {
+              const info = await transporter.sendMail(job.mailOpts);
+              reset.emailSent = true;
+              reset.emailInfo = info && info.messageId ? String(info.messageId) : null;
+              reset.emailAttempts = reset.emailAttempts || [];
+              reset.emailAttempts.unshift({ attempt: job.attempts, time: new Date().toISOString(), success: true, info: reset.emailInfo });
+              addAudit('reset_email_sent_success', 'system', reset.email, { jobId: job.id, resetId: reset.id, attempt: job.attempts });
+              success = true;
+              const idx = savedState.emailQueue.findIndex(j => j.id === job.id);
+              if (idx !== -1) savedState.emailQueue.splice(idx,1);
+              saveQueueToFile();
+              saveState();
+              break;
+            } catch (e) {
+              lastError = String(e && e.message ? e.message : e);
+              reset.emailAttempts = reset.emailAttempts || [];
+              reset.emailAttempts.unshift({ attempt: job.attempts, time: new Date().toISOString(), success: false, error: lastError });
+              addAudit('reset_email_attempt', 'system', reset.email, { jobId: job.id, resetId: reset.id, attempt: job.attempts, error: lastError });
+              saveState();
+              if (job.attempts >= maxAttempts) {
+                reset.emailSent = false;
+                reset.emailError = lastError;
+                addAudit('reset_email_sent_failed', 'system', reset.email, { jobId: job.id, resetId: reset.id, attempts: job.attempts, lastError });
+                const idx = savedState.emailQueue.findIndex(j => j.id === job.id);
+                if (idx !== -1) savedState.emailQueue.splice(idx,1);
+                saveQueueToFile();
+                break;
+              }
+              const delay = baseDelay * Math.pow(2, job.attempts - 1);
+              job.nextRun = Date.now() + delay;
+              job.inProgress = false;
+              const idx = savedState.emailQueue.findIndex(j => j.id === job.id);
+              if (idx !== -1) savedState.emailQueue[idx] = job;
+              saveQueueToFile();
+              break;
+            }
+          }
+          return;
+        }
+
+        // Handle verify jobs
+        if (job.type === 'verify') {
+          const v = (savedState.emailVerifications || []).find(vv => vv.id === job.verifyId);
+          if (!v) {
+            const idx = savedState.emailQueue.findIndex(j => j.id === job.id);
+            if (idx !== -1) savedState.emailQueue.splice(idx,1);
+            addAudit('verify_job_orphaned', 'system', job.email || null, { jobId: job.id, verifyId: job.verifyId });
+            saveQueueToFile();
+            return;
+          }
+          const smtp = savedState.smtp || null;
+          const smtpConfig = { host: process.env.SMTP_HOST || (smtp && smtp.host), port: Number(process.env.SMTP_PORT || (smtp && smtp.port) || 0), user: process.env.SMTP_USER || (smtp && smtp.user), pass: process.env.SMTP_PASS || (smtp && smtp.pass), from: process.env.SMTP_FROM || (smtp && smtp.from) };
+          const hasSmtp = smtpConfig.host && smtpConfig.port && (smtpConfig.user || smtpConfig.pass || smtpConfig.from);
+          if (!hasSmtp) {
+            v.emailSent = false;
+            v.emailError = 'SMTP not configured';
+            v.emailAttempts = v.emailAttempts || [];
+            v.emailAttempts.unshift({ attempt: (job.attempts || 0) + 1, time: new Date().toISOString(), success: false, error: 'SMTP not configured' });
+            const idx = savedState.emailQueue.findIndex(j => j.id === job.id);
+            if (idx !== -1) savedState.emailQueue.splice(idx,1);
+            addAudit('verify_job_no_smtp', 'system', v.email, { jobId: job.id, verifyId: v.id });
+            saveQueueToFile();
+            return;
+          }
+          const nodemailer = require('nodemailer');
+          const transporter = nodemailer.createTransport({ host: smtpConfig.host, port: smtpConfig.port, secure: smtpConfig.port === 465, auth: smtpConfig.user ? { user: smtpConfig.user, pass: smtpConfig.pass } : undefined });
+          job.attempts = job.attempts || 0;
+          const maxAttempts = job.maxAttempts || 3;
+          const baseDelay = job.baseDelay || 1000;
+          let success = false;
+          let lastError = null;
+          while (job.attempts < maxAttempts && !success && !shuttingDown) {
+            job.attempts += 1;
+            try {
+              const info = await transporter.sendMail(job.mailOpts);
+              v.emailSent = true;
+              v.emailInfo = info && info.messageId ? String(info.messageId) : null;
+              v.emailAttempts = v.emailAttempts || [];
+              v.emailAttempts.unshift({ attempt: job.attempts, time: new Date().toISOString(), success: true, info: v.emailInfo });
+              addAudit('verify_email_sent_success', 'system', v.email, { jobId: job.id, verifyId: v.id, attempt: job.attempts });
+              success = true;
+              const idx = savedState.emailQueue.findIndex(j => j.id === job.id);
+              if (idx !== -1) savedState.emailQueue.splice(idx,1);
+              saveQueueToFile();
+              saveState();
+              break;
+            } catch (e) {
+              lastError = String(e && e.message ? e.message : e);
+              v.emailAttempts = v.emailAttempts || [];
+              v.emailAttempts.unshift({ attempt: job.attempts, time: new Date().toISOString(), success: false, error: lastError });
+              addAudit('verify_email_attempt', 'system', v.email, { jobId: job.id, verifyId: v.id, attempt: job.attempts, error: lastError });
+              saveState();
+              if (job.attempts >= maxAttempts) {
+                v.emailSent = false;
+                v.emailError = lastError;
+                addAudit('verify_email_sent_failed', 'system', v.email, { jobId: job.id, verifyId: v.id, attempts: job.attempts, lastError });
+                const idx = savedState.emailQueue.findIndex(j => j.id === job.id);
+                if (idx !== -1) savedState.emailQueue.splice(idx,1);
+                saveQueueToFile();
+                break;
+              }
+              const delay = baseDelay * Math.pow(2, job.attempts - 1);
+              job.nextRun = Date.now() + delay;
+              job.inProgress = false;
+              const idx = savedState.emailQueue.findIndex(j => j.id === job.id);
+              if (idx !== -1) savedState.emailQueue[idx] = job;
+              saveQueueToFile();
+              break;
+            }
+          }
+          return;
+        }
+
+        // Offer jobs continue below
+        const candEmail = job.candidateEmail;
+        const offerId = job.offerId;
+        const ud = usersData[candEmail];
+        const offer = ud && Array.isArray(ud.offers) && ud.offers.find(o => o.id === offerId);
+        if (!offer) {
+          // orphaned job
+          const idx = savedState.emailQueue.findIndex(j => j.id === job.id);
+          if (idx !== -1) savedState.emailQueue.splice(idx,1);
+          addAudit('email_job_orphaned', 'system', candEmail, { jobId: job.id, offerId });
+          saveQueueToFile();
+          return;
+        }
+
+        // check SMTP config
+        const smtp = savedState.smtp || null;
+        const smtpConfig = { host: process.env.SMTP_HOST || (smtp && smtp.host), port: Number(process.env.SMTP_PORT || (smtp && smtp.port) || 0), user: process.env.SMTP_USER || (smtp && smtp.user), pass: process.env.SMTP_PASS || (smtp && smtp.pass), from: process.env.SMTP_FROM || (smtp && smtp.from) };
+        const hasSmtp = smtpConfig.host && smtpConfig.port && (smtpConfig.user || smtpConfig.pass || smtpConfig.from);
+        if (!hasSmtp) {
+          // mark job as failed due to no SMTP and remove
+          offer.emailSent = false;
+          offer.emailError = 'SMTP not configured';
+          offer.emailAttempts = offer.emailAttempts || [];
+          offer.emailAttempts.unshift({ attempt: (job.attempts || 0) + 1, time: new Date().toISOString(), success: false, error: 'SMTP not configured' });
+          const idx = savedState.emailQueue.findIndex(j => j.id === job.id);
+          if (idx !== -1) savedState.emailQueue.splice(idx,1);
+          addAudit('email_job_no_smtp', 'system', candEmail, { jobId: job.id, offerId });
+          saveQueueToFile();
+          return;
+        }
+        const nodemailer = require('nodemailer');
+        const transporter = nodemailer.createTransport({ host: smtpConfig.host, port: smtpConfig.port, secure: smtpConfig.port === 465, auth: smtpConfig.user ? { user: smtpConfig.user, pass: smtpConfig.pass } : undefined });
+
+        // attempt send with retry loop handled at job level
+        job.attempts = job.attempts || 0;
+        const maxAttempts = job.maxAttempts || 3;
+        const baseDelay = job.baseDelay || 1000;
+        let success = false;
+        let lastError = null;
+        while (job.attempts < maxAttempts && !success && !shuttingDown) {
+          job.attempts += 1;
+          try {
+            const info = await transporter.sendMail(job.mailOpts);
+            // success
+            offer.emailSent = true;
+            offer.emailInfo = info && info.messageId ? String(info.messageId) : null;
+            offer.emailAttempts = offer.emailAttempts || [];
+            offer.emailAttempts.unshift({ attempt: job.attempts, time: new Date().toISOString(), success: true, info: offer.emailInfo });
+            addAudit('email_sent_success', 'system', candEmail, { jobId: job.id, offerId, attempt: job.attempts });
+            success = true;
+            // remove job from queue
+            const idx = savedState.emailQueue.findIndex(j => j.id === job.id);
+            if (idx !== -1) savedState.emailQueue.splice(idx,1);
+            saveQueueToFile();
+            saveState();
+            break;
+          } catch (e) {
+            lastError = String(e && e.message ? e.message : e);
+            offer.emailAttempts = offer.emailAttempts || [];
+            offer.emailAttempts.unshift({ attempt: job.attempts, time: new Date().toISOString(), success: false, error: lastError });
+            addAudit('email_attempt', 'system', candEmail, { jobId: job.id, offerId, attempt: job.attempts, error: lastError });
+            saveState();
+            if (job.attempts >= maxAttempts) {
+              offer.emailSent = false;
+              offer.emailError = lastError;
+              addAudit('email_sent_failed', 'system', candEmail, { jobId: job.id, offerId, attempts: job.attempts, lastError });
+              const idx = savedState.emailQueue.findIndex(j => j.id === job.id);
+              if (idx !== -1) savedState.emailQueue.splice(idx,1);
+              saveQueueToFile();
+              break;
+            }
+            // schedule nextRun using exponential backoff
+            const delay = baseDelay * Math.pow(2, job.attempts - 1);
+            job.nextRun = Date.now() + delay;
+            // persist and wait until job.nextRun for the next attempt (other jobs may run in the meantime)
+            job.inProgress = false;
+            const idx = savedState.emailQueue.findIndex(j => j.id === job.id);
+            if (idx !== -1) savedState.emailQueue[idx] = job;
+            saveQueueToFile();
+            // break out so main loop can pick other jobs; the job will be retried later
+            break;
+          }
+        }
+      } catch (err) {
+        try { addAudit('email_worker_error', 'system', null, { error: String(err && err.message ? err.message : err) }); } catch (e) {}
+      } finally {
+        // ensure job inProgress cleared for any job still in queue
+        const idx = savedState.emailQueue.findIndex(j => j && j.id === job.id);
+        if (idx !== -1) { savedState.emailQueue[idx].inProgress = false; delete savedState.emailQueue[idx].lockedAt; }
+        saveQueueToFile();
+      }
+    }));
+  } catch (e) {
+    try { addAudit('email_worker_error', 'system', null, { error: String(e && e.message ? e.message : e) }); } catch (err) {}
+  } finally {
+    queueProcessing = false;
+  }
+}
+
+// start background worker interval
+workerIntervalHandle = setInterval(processEmailQueueTick, 2000);
+
+// graceful shutdown: stop worker and clear in-progress locks so jobs will retry later
+function gracefulShutdown() {
+  if (shuttingDown) return;
+  shuttingDown = true;
+  clearInterval(workerIntervalHandle);
+  // clear inProgress flags and schedule retry
+  try {
+    savedState.emailQueue = savedState.emailQueue || [];
+    for (const job of savedState.emailQueue) {
+      if (job.inProgress) {
+        job.inProgress = false;
+        job.nextRun = Date.now() + 1000; // retry shortly
+        delete job.lockedAt;
+      }
+    }
+    saveQueueToFile();
+  } catch (e) {}
+  // allow a short grace period then exit
+  setTimeout(() => process.exit(0), 2000);
+}
+process.on('SIGINT', gracefulShutdown);
+process.on('SIGTERM', gracefulShutdown);
+
+server.listen(port, () => {
+  console.log(`SkillBridge running at http://localhost:${port}`);
+});

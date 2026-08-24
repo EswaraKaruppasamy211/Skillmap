@@ -1,0 +1,2175 @@
+{
+  "users": [
+    {
+      "email": "eswara@gmail.com",
+      "name": "Eswara",
+      "passwordHash": "eb24a3d40de84dc7952277ce2ce140e63b94967eec256a38d80cee3584df19089b6eb9d34776c7a4a76037ba540492497284a361fd3c2fcab9bd94d832e18888",
+      "salt": "072c9db9e3a7dac0fe3babef731cf70b",
+      "role": "user"
+    },
+    {
+      "email": "newuser@example.com",
+      "name": "New User",
+      "passwordHash": "8e699a47f9a53d27b06ec54ff1ba749c456b67a6bf725e56ceea855a25ebfdde9534841b86b4404deb5087a61d9c6587f4bf21b7e1b7fdd2682c6de786459e72",
+      "salt": "a6dd64dec7754aa2d33c0a02a0640217",
+      "role": "user"
+    },
+    {
+      "email": "alice@example.com",
+      "name": "Alice",
+      "passwordHash": "29e3bc873c8e14028071337321c49e8efa3656fc3fd9e39103a0250b28c607dbe19703b3ba50c509cbe18944d66d5de15f4fdd418f3b2120187a68eebccd7004",
+      "salt": "c7d8c6fd01ffdfaa5fb672f4038b2ee0",
+      "role": "user"
+    },
+    {
+      "email": "testuser705572@example.com",
+      "name": "Smoke Tester",
+      "passwordHash": "71168ae20d206596dfc4af81532cd1d41cfdfa4cc08753cd877ac073d381d8bc8b91cb5c663249ee7a94cfa14362e384b7fa5a110041b1f97c275b48dfec45f9",
+      "salt": "4d88a99661fed0804d76b8ad50f26dfc",
+      "role": "user"
+    },
+    {
+      "email": "user393987@example.com",
+      "name": "PerUser Test",
+      "passwordHash": "fcfa82c775e5cbe60f1044ef1cf674517894acdddda7bbf0de1f384b4938c3093b9c0b7127922609f775dece00e9499da267f71f4d6e45a027adfb1a916d8131",
+      "salt": "76bcfa556122b58c2a87688f13eb56c0",
+      "role": "user"
+    },
+    {
+      "email": "testuser@example.com",
+      "name": "Test User",
+      "passwordHash": "8ec31f23fab3d8966dd480775298fef8a2e74c414a6d7421af7634e020ca2eda558ef6f12a06532cc6516a32fe29a45bf96a8d22e23bcc960da431405216bcf2",
+      "salt": "9faeb44ade1437bef40910d6c9c126ec",
+      "role": "admin"
+    },
+    {
+      "email": "testco+owner@example.local",
+      "name": "Owner",
+      "passwordHash": "4be6fa43be567a5acdaf760be9051cbe25add15ce6b6b3eda6bfb715f4b98e42184d7ac172cc9a92f14e53985dbd55f8f04de326ea59c7ca859641dc8887c252",
+      "salt": "e1d0edcd7cf21929909b9921e708097c",
+      "role": "industry",
+      "companyId": 1787519271357
+    },
+    {
+      "email": "student1@example.local",
+      "name": "Student",
+      "passwordHash": "2e9b77ccea69475c3e7171bdb5ea4f96ef260657da2a767656911dfc486fa562c2ab1197efbb9c67ea47fec33358e0a3af8b3908ae5ad1fd53264f55667ada89",
+      "salt": "6131581f2582c55137d2ec73cbe616c3",
+      "role": "student",
+      "companyId": null
+    },
+    {
+      "email": "invitee1@example.local",
+      "name": "invitee1",
+      "salt": "70481deade804ed1",
+      "passwordHash": "a15095d1222ce0258e3483d0d04113c2c9a2f026a509ca2cd082f45c390f8bee38104c418703cde83fba81bd73b88cc8a534c94cc2976e81ce57eb67027228d8",
+      "role": "industry",
+      "companyId": 1787519271357
+    },
+    {
+      "email": "eswar@gmail.com",
+      "name": "Eswara Karuppasamy K",
+      "passwordHash": "de4ca810b4b8173733566135420e789f1d5a021d32bc6536ea1e26541a52bccfd5d9a2a48fbcf95aad01535efbf3320c8f8ce698764550b98e4cb08077ea7630",
+      "salt": "d9dbb38e6d2f9965767c14999f601670",
+      "role": "student",
+      "companyId": null
+    },
+    {
+      "email": "e2e_user_1787549842.74658@example.com",
+      "name": "E2E Tester 1787549842.74658",
+      "passwordHash": "7b1f558aa7a91ad8056d849cb1ac063efbac417cd6f2a5f3b44b005df691102bd5c7161cf77d390a7f73bb002e816b3d0040637c2c214e686dba8ad737e7b08f",
+      "salt": "31f5905f035add00f581d7596a4505c3",
+      "role": "student",
+      "companyId": null
+    }
+  ],
+  "jwtSecret": "30f65443929cc358ccbfe1669a1f7559d6107cf23a1d746baaebd05a848d8f21",
+  "usersData": {
+    "arjun@skillbridge.ai": {
+      "profile": {
+        "name": "Eswara Karuppasamy K",
+        "track": "Web developer",
+        "email": "arjun@skillbridge.ai"
+      },
+      "goal": "MLOps Engineer",
+      "applications": [
+        {
+          "id": 1787510614546,
+          "role": "Smoke Test Role",
+          "company": "SmokeCo",
+          "status": "Saved",
+          "updated": "Just now",
+          "owner": "arjun@skillbridge.ai"
+        },
+        {
+          "id": 1787504462069,
+          "role": "AI Platform Engineer",
+          "company": "Bharat AI Labs",
+          "status": "Interview",
+          "updated": "Just now",
+          "note": "Follow up with recruiter next Monday.",
+          "owner": "arjun@skillbridge.ai"
+        },
+        {
+          "id": 1,
+          "role": "Junior AI Engineer",
+          "company": "ABC Technologies",
+          "status": "Applied",
+          "updated": "Today",
+          "owner": "arjun@skillbridge.ai"
+        },
+        {
+          "id": 2,
+          "role": "ML Intern",
+          "company": "XYZ Labs",
+          "status": "Interview",
+          "updated": "Yesterday",
+          "owner": "arjun@skillbridge.ai"
+        }
+      ],
+      "certifications": [
+        {
+          "id": 1,
+          "name": "AWS Cloud Practitioner",
+          "provider": "Amazon Web Services",
+          "relevance": "Cloud deployment",
+          "status": "Complete"
+        },
+        {
+          "id": 2,
+          "name": "TensorFlow Developer Certificate",
+          "provider": "TensorFlow",
+          "relevance": "Deep Learning",
+          "status": "In progress"
+        },
+        {
+          "id": 3,
+          "name": "Docker Foundations",
+          "provider": "Docker",
+          "relevance": "Production APIs",
+          "status": "Planned"
+        }
+      ],
+      "skillGaps": [
+        {
+          "name": "FastAPI",
+          "progress": 35,
+          "id": 1,
+          "focus": "Build a prediction API with FastAPI."
+        },
+        {
+          "name": "Docker",
+          "progress": 80,
+          "id": 2,
+          "focus": "Containerize your API and deploy it."
+        },
+        {
+          "name": "Deep Learning",
+          "progress": 55,
+          "id": 3,
+          "focus": "Train and evaluate a neural network."
+        }
+      ],
+      "resumeChecklist": [
+        {
+          "id": 1,
+          "label": "Contact details",
+          "detail": "Email, phone, and location",
+          "complete": true
+        },
+        {
+          "id": 2,
+          "label": "Professional summary",
+          "detail": "A clear AI Engineer introduction",
+          "complete": true
+        },
+        {
+          "id": 3,
+          "label": "Technical skills",
+          "detail": "Python, ML, and deployment tools",
+          "complete": true
+        },
+        {
+          "id": 4,
+          "label": "Featured projects",
+          "detail": "Add one production-ready project",
+          "complete": false
+        },
+        {
+          "id": 5,
+          "label": "Resume PDF",
+          "detail": "Upload your latest tailored resume",
+          "complete": false
+        }
+      ],
+      "learningResources": [
+        {
+          "id": 1,
+          "skill": "FastAPI",
+          "title": "Production APIs with FastAPI",
+          "meta": "6 lessons · 2 hours",
+          "progress": 100,
+          "color": "green"
+        },
+        {
+          "id": 2,
+          "skill": "Docker",
+          "title": "Ship your first ML service",
+          "meta": "8 lessons · 3 hours",
+          "progress": 100,
+          "color": "coral"
+        },
+        {
+          "id": 3,
+          "skill": "Deep Learning",
+          "title": "Neural networks, clearly explained",
+          "meta": "10 lessons · 4 hours",
+          "progress": 100,
+          "color": "yellow"
+        }
+      ],
+      "projects": [
+        {
+          "id": 1,
+          "title": "Customer churn predictor",
+          "description": "A tested ML service that predicts customer risk from product activity.",
+          "skills": [
+            "Python",
+            "Scikit-learn"
+          ],
+          "status": "Complete"
+        },
+        {
+          "id": 2,
+          "title": "Production prediction API",
+          "description": "Deploy a model with FastAPI, Docker, health checks, and clear documentation.",
+          "skills": [
+            "FastAPI",
+            "Docker"
+          ],
+          "status": "Complete"
+        },
+        {
+          "id": 3,
+          "title": "Neural image classifier",
+          "description": "Train, evaluate, and explain a neural network on a real dataset.",
+          "skills": [
+            "PyTorch",
+            "Deep Learning"
+          ],
+          "status": "Complete"
+        }
+      ],
+      "settings": {
+        "emailUpdates": true,
+        "weeklyDigest": true,
+        "opportunityAlerts": false
+      },
+      "mentorshipRequests": [],
+      "notifications": [
+        {
+          "id": 1787510614546,
+          "title": "Role saved",
+          "detail": "Smoke Test Role at SmokeCo was added to your Saved applications.",
+          "time": "Just now",
+          "unread": true
+        },
+        {
+          "id": 1,
+          "title": "New role match",
+          "detail": "Junior AI Engineer at ABC Technologies matches 92%.",
+          "time": "12 min ago",
+          "unread": true
+        },
+        {
+          "id": 2,
+          "title": "Keep your streak alive",
+          "detail": "You are one learning session away from a 6-day streak.",
+          "time": "2 hours ago",
+          "unread": true
+        },
+        {
+          "id": 3,
+          "title": "Profile tip",
+          "detail": "Add your production API project to strengthen your profile.",
+          "time": "Yesterday",
+          "unread": false
+        }
+      ],
+      "assessmentState": {
+        "lastResult": {
+          "score": 67,
+          "correct": 2,
+          "total": 3,
+          "recommendation": "Review FastAPI, Docker, and model evaluation in your Skill Gap Plan."
+        }
+      },
+      "skillMap": [
+        {
+          "id": 1,
+          "name": "Python",
+          "level": 92,
+          "group": "Core",
+          "next": "Build a typed service with tests."
+        },
+        {
+          "id": 2,
+          "name": "Machine Learning",
+          "level": 84,
+          "group": "Core",
+          "next": "Compare three model approaches on one dataset."
+        },
+        {
+          "id": 3,
+          "name": "FastAPI",
+          "level": 35,
+          "group": "Developing",
+          "next": "Create a /predict endpoint."
+        },
+        {
+          "id": 4,
+          "name": "Docker",
+          "level": 30,
+          "group": "Developing",
+          "next": "Containerize your ML service."
+        },
+        {
+          "id": 5,
+          "name": "Cloud deployment",
+          "level": 18,
+          "group": "Target",
+          "next": "Deploy a container with health checks."
+        },
+        {
+          "id": 6,
+          "name": "Deep Learning",
+          "level": 55,
+          "group": "Developing",
+          "next": "Train and evaluate a neural network."
+        }
+      ]
+    },
+    "user393987@example.com": {
+      "profile": {
+        "name": "PerUser Test",
+        "track": "Explore",
+        "email": "user393987@example.com"
+      },
+      "goal": "AI Engineer",
+      "applications": [
+        {
+          "id": 1787512634738,
+          "role": "PerUser Role",
+          "company": "PerUserCo",
+          "status": "Saved",
+          "updated": "Just now",
+          "owner": "user393987@example.com"
+        }
+      ],
+      "certifications": [
+        {
+          "id": 1,
+          "name": "AWS Cloud Practitioner",
+          "provider": "Amazon Web Services",
+          "relevance": "Cloud deployment",
+          "status": "Recommended"
+        },
+        {
+          "id": 2,
+          "name": "TensorFlow Developer Certificate",
+          "provider": "TensorFlow",
+          "relevance": "Deep Learning",
+          "status": "In progress"
+        },
+        {
+          "id": 3,
+          "name": "Docker Foundations",
+          "provider": "Docker",
+          "relevance": "Production APIs",
+          "status": "Planned"
+        }
+      ],
+      "skillGaps": [
+        {
+          "name": "FastAPI",
+          "progress": 35,
+          "id": 1
+        },
+        {
+          "name": "Docker",
+          "progress": 30,
+          "id": 2
+        },
+        {
+          "name": "Deep Learning",
+          "progress": 55,
+          "id": 3
+        }
+      ],
+      "resumeChecklist": [
+        {
+          "id": 1,
+          "label": "Contact details",
+          "detail": "Email, phone, and location",
+          "complete": true
+        },
+        {
+          "id": 2,
+          "label": "Professional summary",
+          "detail": "A clear AI Engineer introduction",
+          "complete": true
+        },
+        {
+          "id": 3,
+          "label": "Technical skills",
+          "detail": "Python, ML, and deployment tools",
+          "complete": true
+        },
+        {
+          "id": 4,
+          "label": "Featured projects",
+          "detail": "Add one production-ready project",
+          "complete": false
+        },
+        {
+          "id": 5,
+          "label": "Resume PDF",
+          "detail": "Upload your latest tailored resume",
+          "complete": false
+        }
+      ],
+      "learningResources": [
+        {
+          "id": 1,
+          "skill": "FastAPI",
+          "title": "Production APIs with FastAPI",
+          "meta": "6 lessons · 2 hours",
+          "progress": 100,
+          "color": "green"
+        },
+        {
+          "id": 2,
+          "skill": "Docker",
+          "title": "Ship your first ML service",
+          "meta": "8 lessons · 3 hours",
+          "progress": 100,
+          "color": "coral"
+        },
+        {
+          "id": 3,
+          "skill": "Deep Learning",
+          "title": "Neural networks, clearly explained",
+          "meta": "10 lessons · 4 hours",
+          "progress": 100,
+          "color": "yellow"
+        }
+      ],
+      "projects": [
+        {
+          "id": 1,
+          "title": "Customer churn predictor",
+          "description": "A tested ML service that predicts customer risk from product activity.",
+          "skills": [
+            "Python",
+            "Scikit-learn"
+          ],
+          "status": "Complete"
+        },
+        {
+          "id": 2,
+          "title": "Production prediction API",
+          "description": "Deploy a model with FastAPI, Docker, health checks, and clear documentation.",
+          "skills": [
+            "FastAPI",
+            "Docker"
+          ],
+          "status": "Complete"
+        },
+        {
+          "id": 3,
+          "title": "Neural image classifier",
+          "description": "Train, evaluate, and explain a neural network on a real dataset.",
+          "skills": [
+            "PyTorch",
+            "Deep Learning"
+          ],
+          "status": "Complete"
+        }
+      ],
+      "settings": {
+        "emailUpdates": true,
+        "weeklyDigest": true,
+        "opportunityAlerts": false
+      },
+      "mentorshipRequests": [],
+      "notifications": [
+        {
+          "id": 1787512634738,
+          "title": "Role saved",
+          "detail": "PerUser Role at PerUserCo was added to your Saved applications.",
+          "time": "Just now",
+          "unread": true
+        }
+      ],
+      "assessmentState": {
+        "lastResult": null
+      },
+      "skillMap": [
+        {
+          "id": 1,
+          "name": "Python",
+          "level": 92,
+          "group": "Core",
+          "next": "Build a typed service with tests."
+        },
+        {
+          "id": 2,
+          "name": "Machine Learning",
+          "level": 84,
+          "group": "Core",
+          "next": "Compare three model approaches on one dataset."
+        },
+        {
+          "id": 3,
+          "name": "FastAPI",
+          "level": 35,
+          "group": "Developing",
+          "next": "Create a /predict endpoint."
+        },
+        {
+          "id": 4,
+          "name": "Docker",
+          "level": 30,
+          "group": "Developing",
+          "next": "Containerize your ML service."
+        },
+        {
+          "id": 5,
+          "name": "Cloud deployment",
+          "level": 18,
+          "group": "Target",
+          "next": "Deploy a container with health checks."
+        },
+        {
+          "id": 6,
+          "name": "Deep Learning",
+          "level": 55,
+          "group": "Developing",
+          "next": "Train and evaluate a neural network."
+        }
+      ]
+    },
+    "testuser@example.com": {
+      "profile": {
+        "name": "Test User",
+        "track": "Explore",
+        "email": "testuser@example.com"
+      },
+      "goal": "AI Engineer",
+      "applications": [],
+      "certifications": [
+        {
+          "id": 1,
+          "name": "AWS Cloud Practitioner",
+          "provider": "Amazon Web Services",
+          "relevance": "Cloud deployment",
+          "status": "Recommended"
+        },
+        {
+          "id": 2,
+          "name": "TensorFlow Developer Certificate",
+          "provider": "TensorFlow",
+          "relevance": "Deep Learning",
+          "status": "In progress"
+        },
+        {
+          "id": 3,
+          "name": "Docker Foundations",
+          "provider": "Docker",
+          "relevance": "Production APIs",
+          "status": "Planned"
+        }
+      ],
+      "skillGaps": [
+        {
+          "name": "FastAPI",
+          "progress": 35,
+          "id": 1
+        },
+        {
+          "name": "Docker",
+          "progress": 30,
+          "id": 2
+        },
+        {
+          "name": "Deep Learning",
+          "progress": 55,
+          "id": 3
+        }
+      ],
+      "resumeChecklist": [
+        {
+          "id": 1,
+          "label": "Contact details",
+          "detail": "Email, phone, and location",
+          "complete": true
+        },
+        {
+          "id": 2,
+          "label": "Professional summary",
+          "detail": "A clear AI Engineer introduction",
+          "complete": true
+        },
+        {
+          "id": 3,
+          "label": "Technical skills",
+          "detail": "Python, ML, and deployment tools",
+          "complete": true
+        },
+        {
+          "id": 4,
+          "label": "Featured projects",
+          "detail": "Add one production-ready project",
+          "complete": false
+        },
+        {
+          "id": 5,
+          "label": "Resume PDF",
+          "detail": "Upload your latest tailored resume",
+          "complete": false
+        }
+      ],
+      "learningResources": [
+        {
+          "id": 1,
+          "skill": "FastAPI",
+          "title": "Production APIs with FastAPI",
+          "meta": "6 lessons · 2 hours",
+          "progress": 100,
+          "color": "green"
+        },
+        {
+          "id": 2,
+          "skill": "Docker",
+          "title": "Ship your first ML service",
+          "meta": "8 lessons · 3 hours",
+          "progress": 100,
+          "color": "coral"
+        },
+        {
+          "id": 3,
+          "skill": "Deep Learning",
+          "title": "Neural networks, clearly explained",
+          "meta": "10 lessons · 4 hours",
+          "progress": 100,
+          "color": "yellow"
+        }
+      ],
+      "projects": [
+        {
+          "id": 1,
+          "title": "Customer churn predictor",
+          "description": "A tested ML service that predicts customer risk from product activity.",
+          "skills": [
+            "Python",
+            "Scikit-learn"
+          ],
+          "status": "Complete"
+        },
+        {
+          "id": 2,
+          "title": "Production prediction API",
+          "description": "Deploy a model with FastAPI, Docker, health checks, and clear documentation.",
+          "skills": [
+            "FastAPI",
+            "Docker"
+          ],
+          "status": "Complete"
+        },
+        {
+          "id": 3,
+          "title": "Neural image classifier",
+          "description": "Train, evaluate, and explain a neural network on a real dataset.",
+          "skills": [
+            "PyTorch",
+            "Deep Learning"
+          ],
+          "status": "Complete"
+        }
+      ],
+      "settings": {
+        "emailUpdates": true,
+        "weeklyDigest": true,
+        "opportunityAlerts": false
+      },
+      "mentorshipRequests": [],
+      "notifications": [],
+      "assessmentState": {
+        "lastResult": null
+      },
+      "skillMap": [
+        {
+          "id": 1,
+          "name": "Python",
+          "level": 92,
+          "group": "Core",
+          "next": "Build a typed service with tests."
+        },
+        {
+          "id": 2,
+          "name": "Machine Learning",
+          "level": 84,
+          "group": "Core",
+          "next": "Compare three model approaches on one dataset."
+        },
+        {
+          "id": 3,
+          "name": "FastAPI",
+          "level": 35,
+          "group": "Developing",
+          "next": "Create a /predict endpoint."
+        },
+        {
+          "id": 4,
+          "name": "Docker",
+          "level": 30,
+          "group": "Developing",
+          "next": "Containerize your ML service."
+        },
+        {
+          "id": 5,
+          "name": "Cloud deployment",
+          "level": 18,
+          "group": "Target",
+          "next": "Deploy a container with health checks."
+        },
+        {
+          "id": 6,
+          "name": "Deep Learning",
+          "level": 55,
+          "group": "Developing",
+          "next": "Train and evaluate a neural network."
+        }
+      ]
+    },
+    "testco+owner@example.local": {
+      "profile": {
+        "name": "Owner",
+        "track": "Explore",
+        "email": "testco+owner@example.local"
+      },
+      "goal": "AI Engineer",
+      "applications": [],
+      "certifications": [
+        {
+          "id": 1,
+          "name": "AWS Cloud Practitioner",
+          "provider": "Amazon Web Services",
+          "relevance": "Cloud deployment",
+          "status": "Recommended"
+        },
+        {
+          "id": 2,
+          "name": "TensorFlow Developer Certificate",
+          "provider": "TensorFlow",
+          "relevance": "Deep Learning",
+          "status": "In progress"
+        },
+        {
+          "id": 3,
+          "name": "Docker Foundations",
+          "provider": "Docker",
+          "relevance": "Production APIs",
+          "status": "Planned"
+        }
+      ],
+      "skillGaps": [
+        {
+          "name": "FastAPI",
+          "progress": 35,
+          "id": 1
+        },
+        {
+          "name": "Docker",
+          "progress": 30,
+          "id": 2
+        },
+        {
+          "name": "Deep Learning",
+          "progress": 55,
+          "id": 3
+        }
+      ],
+      "resumeChecklist": [
+        {
+          "id": 1,
+          "label": "Contact details",
+          "detail": "Email, phone, and location",
+          "complete": true
+        },
+        {
+          "id": 2,
+          "label": "Professional summary",
+          "detail": "A clear AI Engineer introduction",
+          "complete": true
+        },
+        {
+          "id": 3,
+          "label": "Technical skills",
+          "detail": "Python, ML, and deployment tools",
+          "complete": true
+        },
+        {
+          "id": 4,
+          "label": "Featured projects",
+          "detail": "Add one production-ready project",
+          "complete": false
+        },
+        {
+          "id": 5,
+          "label": "Resume PDF",
+          "detail": "Upload your latest tailored resume",
+          "complete": false
+        }
+      ],
+      "learningResources": [
+        {
+          "id": 1,
+          "skill": "FastAPI",
+          "title": "Production APIs with FastAPI",
+          "meta": "6 lessons · 2 hours",
+          "progress": 20,
+          "color": "green"
+        },
+        {
+          "id": 2,
+          "skill": "Docker",
+          "title": "Ship your first ML service",
+          "meta": "8 lessons · 3 hours",
+          "progress": 0,
+          "color": "coral"
+        },
+        {
+          "id": 3,
+          "skill": "Deep Learning",
+          "title": "Neural networks, clearly explained",
+          "meta": "10 lessons · 4 hours",
+          "progress": 60,
+          "color": "yellow"
+        }
+      ],
+      "projects": [
+        {
+          "id": 1,
+          "title": "Customer churn predictor",
+          "description": "A tested ML service that predicts customer risk from product activity.",
+          "skills": [
+            "Python",
+            "Scikit-learn"
+          ],
+          "status": "Complete"
+        },
+        {
+          "id": 2,
+          "title": "Production prediction API",
+          "description": "Deploy a model with FastAPI, Docker, health checks, and clear documentation.",
+          "skills": [
+            "FastAPI",
+            "Docker"
+          ],
+          "status": "In progress"
+        },
+        {
+          "id": 3,
+          "title": "Neural image classifier",
+          "description": "Train, evaluate, and explain a neural network on a real dataset.",
+          "skills": [
+            "PyTorch",
+            "Deep Learning"
+          ],
+          "status": "Planned"
+        }
+      ],
+      "settings": {
+        "emailUpdates": true,
+        "weeklyDigest": true,
+        "opportunityAlerts": false
+      },
+      "mentorshipRequests": [],
+      "notifications": [],
+      "assessmentState": {
+        "lastResult": null
+      },
+      "skillMap": [
+        {
+          "id": 1,
+          "name": "Python",
+          "level": 92,
+          "group": "Core",
+          "next": "Build a typed service with tests."
+        },
+        {
+          "id": 2,
+          "name": "Machine Learning",
+          "level": 84,
+          "group": "Core",
+          "next": "Compare three model approaches on one dataset."
+        },
+        {
+          "id": 3,
+          "name": "FastAPI",
+          "level": 35,
+          "group": "Developing",
+          "next": "Create a /predict endpoint."
+        },
+        {
+          "id": 4,
+          "name": "Docker",
+          "level": 30,
+          "group": "Developing",
+          "next": "Containerize your ML service."
+        },
+        {
+          "id": 5,
+          "name": "Cloud deployment",
+          "level": 18,
+          "group": "Target",
+          "next": "Deploy a container with health checks."
+        },
+        {
+          "id": 6,
+          "name": "Deep Learning",
+          "level": 55,
+          "group": "Developing",
+          "next": "Train and evaluate a neural network."
+        }
+      ],
+      "employerJobs": [],
+      "offers": [],
+      "company": {
+        "id": 1787519271357,
+        "name": "TestCo",
+        "owner": "testco+owner@example.local",
+        "createdAt": "2026-08-23T21:07:51.358Z"
+      }
+    },
+    "student1@example.local": {
+      "profile": {
+        "name": "Student",
+        "track": "Explore",
+        "email": "student1@example.local"
+      },
+      "goal": "AI Engineer",
+      "applications": [],
+      "certifications": [
+        {
+          "id": 1,
+          "name": "AWS Cloud Practitioner",
+          "provider": "Amazon Web Services",
+          "relevance": "Cloud deployment",
+          "status": "Recommended"
+        },
+        {
+          "id": 2,
+          "name": "TensorFlow Developer Certificate",
+          "provider": "TensorFlow",
+          "relevance": "Deep Learning",
+          "status": "In progress"
+        },
+        {
+          "id": 3,
+          "name": "Docker Foundations",
+          "provider": "Docker",
+          "relevance": "Production APIs",
+          "status": "Planned"
+        }
+      ],
+      "skillGaps": [
+        {
+          "name": "FastAPI",
+          "progress": 35,
+          "id": 1
+        },
+        {
+          "name": "Docker",
+          "progress": 30,
+          "id": 2
+        },
+        {
+          "name": "Deep Learning",
+          "progress": 55,
+          "id": 3
+        }
+      ],
+      "resumeChecklist": [
+        {
+          "id": 1,
+          "label": "Contact details",
+          "detail": "Email, phone, and location",
+          "complete": true
+        },
+        {
+          "id": 2,
+          "label": "Professional summary",
+          "detail": "A clear AI Engineer introduction",
+          "complete": true
+        },
+        {
+          "id": 3,
+          "label": "Technical skills",
+          "detail": "Python, ML, and deployment tools",
+          "complete": true
+        },
+        {
+          "id": 4,
+          "label": "Featured projects",
+          "detail": "Add one production-ready project",
+          "complete": false
+        },
+        {
+          "id": 5,
+          "label": "Resume PDF",
+          "detail": "Upload your latest tailored resume",
+          "complete": false
+        }
+      ],
+      "learningResources": [
+        {
+          "id": 1,
+          "skill": "FastAPI",
+          "title": "Production APIs with FastAPI",
+          "meta": "6 lessons · 2 hours",
+          "progress": 20,
+          "color": "green"
+        },
+        {
+          "id": 2,
+          "skill": "Docker",
+          "title": "Ship your first ML service",
+          "meta": "8 lessons · 3 hours",
+          "progress": 0,
+          "color": "coral"
+        },
+        {
+          "id": 3,
+          "skill": "Deep Learning",
+          "title": "Neural networks, clearly explained",
+          "meta": "10 lessons · 4 hours",
+          "progress": 60,
+          "color": "yellow"
+        }
+      ],
+      "projects": [
+        {
+          "id": 1,
+          "title": "Customer churn predictor",
+          "description": "A tested ML service that predicts customer risk from product activity.",
+          "skills": [
+            "Python",
+            "Scikit-learn"
+          ],
+          "status": "Complete"
+        },
+        {
+          "id": 2,
+          "title": "Production prediction API",
+          "description": "Deploy a model with FastAPI, Docker, health checks, and clear documentation.",
+          "skills": [
+            "FastAPI",
+            "Docker"
+          ],
+          "status": "In progress"
+        },
+        {
+          "id": 3,
+          "title": "Neural image classifier",
+          "description": "Train, evaluate, and explain a neural network on a real dataset.",
+          "skills": [
+            "PyTorch",
+            "Deep Learning"
+          ],
+          "status": "Planned"
+        }
+      ],
+      "settings": {
+        "emailUpdates": true,
+        "weeklyDigest": true,
+        "opportunityAlerts": false
+      },
+      "mentorshipRequests": [],
+      "notifications": [],
+      "assessmentState": {
+        "lastResult": null
+      },
+      "skillMap": [
+        {
+          "id": 1,
+          "name": "Python",
+          "level": 92,
+          "group": "Core",
+          "next": "Build a typed service with tests."
+        },
+        {
+          "id": 2,
+          "name": "Machine Learning",
+          "level": 84,
+          "group": "Core",
+          "next": "Compare three model approaches on one dataset."
+        },
+        {
+          "id": 3,
+          "name": "FastAPI",
+          "level": 35,
+          "group": "Developing",
+          "next": "Create a /predict endpoint."
+        },
+        {
+          "id": 4,
+          "name": "Docker",
+          "level": 30,
+          "group": "Developing",
+          "next": "Containerize your ML service."
+        },
+        {
+          "id": 5,
+          "name": "Cloud deployment",
+          "level": 18,
+          "group": "Target",
+          "next": "Deploy a container with health checks."
+        },
+        {
+          "id": 6,
+          "name": "Deep Learning",
+          "level": 55,
+          "group": "Developing",
+          "next": "Train and evaluate a neural network."
+        }
+      ],
+      "employerJobs": [],
+      "offers": []
+    },
+    "invitee1@example.local": {
+      "profile": {
+        "name": "invitee1",
+        "email": "invitee1@example.local"
+      },
+      "goal": null,
+      "company": {
+        "id": 1787519271357,
+        "name": "TestCo"
+      }
+    },
+    "eswar@gmail.com": {
+      "profile": {
+        "name": "Eswara Karuppasamy K",
+        "track": "Explore",
+        "email": "eswar@gmail.com",
+        "college": "KCET",
+        "department": "CSE",
+        "year": "1",
+        "phone": "9344869645"
+      },
+      "goal": "AI Engineer",
+      "applications": [],
+      "certifications": [
+        {
+          "id": 1,
+          "name": "AWS Cloud Practitioner",
+          "provider": "Amazon Web Services",
+          "relevance": "Cloud deployment",
+          "status": "Recommended"
+        },
+        {
+          "id": 2,
+          "name": "TensorFlow Developer Certificate",
+          "provider": "TensorFlow",
+          "relevance": "Deep Learning",
+          "status": "In progress"
+        },
+        {
+          "id": 3,
+          "name": "Docker Foundations",
+          "provider": "Docker",
+          "relevance": "Production APIs",
+          "status": "Planned"
+        }
+      ],
+      "skillGaps": [
+        {
+          "name": "FastAPI",
+          "progress": 65,
+          "id": 1
+        },
+        {
+          "name": "Docker",
+          "progress": 30,
+          "id": 2
+        },
+        {
+          "name": "Deep Learning",
+          "progress": 55,
+          "id": 3
+        }
+      ],
+      "resumeChecklist": [
+        {
+          "id": 1,
+          "label": "Contact details",
+          "detail": "Email, phone, and location",
+          "complete": true
+        },
+        {
+          "id": 2,
+          "label": "Professional summary",
+          "detail": "A clear AI Engineer introduction",
+          "complete": true
+        },
+        {
+          "id": 3,
+          "label": "Technical skills",
+          "detail": "Python, ML, and deployment tools",
+          "complete": true
+        },
+        {
+          "id": 4,
+          "label": "Featured projects",
+          "detail": "Add one production-ready project",
+          "complete": false
+        },
+        {
+          "id": 5,
+          "label": "Resume PDF",
+          "detail": "Upload your latest tailored resume",
+          "complete": false
+        }
+      ],
+      "learningResources": [
+        {
+          "id": 1,
+          "skill": "FastAPI",
+          "title": "Production APIs with FastAPI",
+          "meta": "6 lessons · 2 hours",
+          "progress": 20,
+          "color": "green"
+        },
+        {
+          "id": 2,
+          "skill": "Docker",
+          "title": "Ship your first ML service",
+          "meta": "8 lessons · 3 hours",
+          "progress": 0,
+          "color": "coral"
+        },
+        {
+          "id": 3,
+          "skill": "Deep Learning",
+          "title": "Neural networks, clearly explained",
+          "meta": "10 lessons · 4 hours",
+          "progress": 60,
+          "color": "yellow"
+        }
+      ],
+      "projects": [
+        {
+          "id": 1,
+          "title": "Customer churn predictor",
+          "description": "A tested ML service that predicts customer risk from product activity.",
+          "skills": [
+            "Python",
+            "Scikit-learn"
+          ],
+          "status": "Complete"
+        },
+        {
+          "id": 2,
+          "title": "Production prediction API",
+          "description": "Deploy a model with FastAPI, Docker, health checks, and clear documentation.",
+          "skills": [
+            "FastAPI",
+            "Docker"
+          ],
+          "status": "In progress"
+        },
+        {
+          "id": 3,
+          "title": "Neural image classifier",
+          "description": "Train, evaluate, and explain a neural network on a real dataset.",
+          "skills": [
+            "PyTorch",
+            "Deep Learning"
+          ],
+          "status": "Planned"
+        }
+      ],
+      "settings": {
+        "emailUpdates": true,
+        "weeklyDigest": true,
+        "opportunityAlerts": false
+      },
+      "mentorshipRequests": [],
+      "notifications": [],
+      "assessmentState": {
+        "lastResult": null
+      },
+      "skillMap": [
+        {
+          "id": 1,
+          "name": "Python",
+          "level": 92,
+          "group": "Core",
+          "next": "Build a typed service with tests."
+        },
+        {
+          "id": 2,
+          "name": "Machine Learning",
+          "level": 84,
+          "group": "Core",
+          "next": "Compare three model approaches on one dataset."
+        },
+        {
+          "id": 3,
+          "name": "FastAPI",
+          "level": 35,
+          "group": "Developing",
+          "next": "Create a /predict endpoint."
+        },
+        {
+          "id": 4,
+          "name": "Docker",
+          "level": 30,
+          "group": "Developing",
+          "next": "Containerize your ML service."
+        },
+        {
+          "id": 5,
+          "name": "Cloud deployment",
+          "level": 18,
+          "group": "Target",
+          "next": "Deploy a container with health checks."
+        },
+        {
+          "id": 6,
+          "name": "Deep Learning",
+          "level": 55,
+          "group": "Developing",
+          "next": "Train and evaluate a neural network."
+        }
+      ],
+      "employerJobs": [],
+      "offers": []
+    },
+    "e2e_user_1787549842.74658@example.com": {
+      "profile": {
+        "name": "E2E Tester 1787549842.74658",
+        "track": "AI Engineer",
+        "email": "e2e_user_1787549842.74658@example.com",
+        "college": "Test College",
+        "department": "CS",
+        "year": "3",
+        "phone": "9999999999"
+      },
+      "goal": "AI Engineer",
+      "applications": [
+        {
+          "id": 1787530099393,
+          "role": "Junior AI Engineer",
+          "company": "TestCorp",
+          "status": "Saved",
+          "updated": "Just now",
+          "owner": "e2e_user_1787549842.74658@example.com"
+        }
+      ],
+      "certifications": [
+        {
+          "id": 1,
+          "name": "AWS Cloud Practitioner",
+          "provider": "Amazon Web Services",
+          "relevance": "Cloud deployment",
+          "status": "Recommended"
+        },
+        {
+          "id": 2,
+          "name": "TensorFlow Developer Certificate",
+          "provider": "TensorFlow",
+          "relevance": "Deep Learning",
+          "status": "In progress"
+        },
+        {
+          "id": 3,
+          "name": "Docker Foundations",
+          "provider": "Docker",
+          "relevance": "Production APIs",
+          "status": "Planned"
+        }
+      ],
+      "skillGaps": [
+        {
+          "name": "FastAPI",
+          "progress": 35,
+          "id": 1
+        },
+        {
+          "name": "Docker",
+          "progress": 30,
+          "id": 2
+        },
+        {
+          "name": "Deep Learning",
+          "progress": 55,
+          "id": 3
+        }
+      ],
+      "resumeChecklist": [
+        {
+          "id": 1,
+          "label": "Contact details",
+          "detail": "Email, phone, and location",
+          "complete": true
+        },
+        {
+          "id": 2,
+          "label": "Professional summary",
+          "detail": "A clear AI Engineer introduction",
+          "complete": true
+        },
+        {
+          "id": 3,
+          "label": "Technical skills",
+          "detail": "Python, ML, and deployment tools",
+          "complete": true
+        },
+        {
+          "id": 4,
+          "label": "Featured projects",
+          "detail": "Add one production-ready project",
+          "complete": false
+        },
+        {
+          "id": 5,
+          "label": "Resume PDF",
+          "detail": "Upload your latest tailored resume",
+          "complete": false
+        }
+      ],
+      "learningResources": [
+        {
+          "id": 1,
+          "skill": "FastAPI",
+          "title": "Production APIs with FastAPI",
+          "meta": "6 lessons · 2 hours",
+          "progress": 20,
+          "color": "green"
+        },
+        {
+          "id": 2,
+          "skill": "Docker",
+          "title": "Ship your first ML service",
+          "meta": "8 lessons · 3 hours",
+          "progress": 0,
+          "color": "coral"
+        },
+        {
+          "id": 3,
+          "skill": "Deep Learning",
+          "title": "Neural networks, clearly explained",
+          "meta": "10 lessons · 4 hours",
+          "progress": 60,
+          "color": "yellow"
+        }
+      ],
+      "projects": [
+        {
+          "id": 1,
+          "title": "Customer churn predictor",
+          "description": "A tested ML service that predicts customer risk from product activity.",
+          "skills": [
+            "Python",
+            "Scikit-learn"
+          ],
+          "status": "Complete"
+        },
+        {
+          "id": 2,
+          "title": "Production prediction API",
+          "description": "Deploy a model with FastAPI, Docker, health checks, and clear documentation.",
+          "skills": [
+            "FastAPI",
+            "Docker"
+          ],
+          "status": "In progress"
+        },
+        {
+          "id": 3,
+          "title": "Neural image classifier",
+          "description": "Train, evaluate, and explain a neural network on a real dataset.",
+          "skills": [
+            "PyTorch",
+            "Deep Learning"
+          ],
+          "status": "Planned"
+        }
+      ],
+      "settings": {
+        "emailUpdates": true,
+        "weeklyDigest": true,
+        "opportunityAlerts": false
+      },
+      "mentorshipRequests": [],
+      "notifications": [
+        {
+          "id": 1787530099393,
+          "title": "Role saved",
+          "detail": "Junior AI Engineer at TestCorp was added to your Saved applications.",
+          "time": "Just now",
+          "unread": true
+        }
+      ],
+      "assessmentState": {
+        "lastResult": {
+          "score": 100,
+          "correct": 3,
+          "total": 3,
+          "recommendation": "Your fundamentals are strong. Focus on production projects next."
+        },
+        "lastAnswers": {
+          "1": "FastAPI",
+          "2": "Containers",
+          "3": "F1 score"
+        },
+        "lastTimestamp": 1787530099357
+      },
+      "skillMap": [
+        {
+          "id": 1,
+          "name": "Python",
+          "level": 92,
+          "group": "Core",
+          "next": "Build a typed service with tests."
+        },
+        {
+          "id": 2,
+          "name": "Machine Learning",
+          "level": 84,
+          "group": "Core",
+          "next": "Compare three model approaches on one dataset."
+        },
+        {
+          "id": 3,
+          "name": "FastAPI",
+          "level": 35,
+          "group": "Developing",
+          "next": "Create a /predict endpoint."
+        },
+        {
+          "id": 4,
+          "name": "Docker",
+          "level": 30,
+          "group": "Developing",
+          "next": "Containerize your ML service."
+        },
+        {
+          "id": 5,
+          "name": "Cloud deployment",
+          "level": 18,
+          "group": "Target",
+          "next": "Deploy a container with health checks."
+        },
+        {
+          "id": 6,
+          "name": "Deep Learning",
+          "level": 55,
+          "group": "Developing",
+          "next": "Train and evaluate a neural network."
+        }
+      ],
+      "employerJobs": [],
+      "offers": []
+    }
+  },
+  "auditLogs": [
+    {
+      "id": 1787530047557,
+      "time": "2026-08-24T00:07:27.557Z",
+      "action": "verify_email_sent_success",
+      "actor": "system",
+      "target": "e2e_user_1787549842.74658@example.com",
+      "details": {
+        "jobId": 1787530042889,
+        "verifyId": "verify_1787530042889",
+        "attempt": 1
+      }
+    },
+    {
+      "id": 1787530042889,
+      "time": "2026-08-24T00:07:22.889Z",
+      "action": "user_register",
+      "actor": "e2e_user_1787549842.74658@example.com",
+      "target": null,
+      "details": {
+        "role": "student",
+        "companyId": null
+      }
+    },
+    {
+      "id": 1787529931479,
+      "time": "2026-08-24T00:05:31.479Z",
+      "action": "verify_email_sent_success",
+      "actor": "system",
+      "target": "eswar@gmail.com",
+      "details": {
+        "jobId": 1787529926469,
+        "verifyId": "verify_1787529926469",
+        "attempt": 1
+      }
+    },
+    {
+      "id": 1787529926469,
+      "time": "2026-08-24T00:05:26.469Z",
+      "action": "user_register",
+      "actor": "eswar@gmail.com",
+      "target": null,
+      "details": {
+        "role": "student",
+        "companyId": null
+      }
+    },
+    {
+      "id": 1787523417472,
+      "time": "2026-08-23T22:16:57.472Z",
+      "action": "invite_email_sent_success",
+      "actor": "system",
+      "target": "invitee1@example.local",
+      "details": {
+        "jobId": 1787523408648,
+        "inviteId": "invite_1787519767117",
+        "attempt": 1
+      }
+    },
+    {
+      "id": 1787523408648,
+      "time": "2026-08-23T22:16:48.648Z",
+      "action": "email_queue_reenqueue",
+      "actor": "arjun@skillbridge.ai",
+      "target": "invitee1@example.local",
+      "details": {
+        "inviteId": "invite_1787519767117",
+        "queueId": 1787523408648
+      }
+    },
+    {
+      "id": 1787521699526,
+      "time": "2026-08-23T21:48:19.526Z",
+      "action": "invite_email_sent_success",
+      "actor": "system",
+      "target": "invitee1@example.local",
+      "details": {
+        "jobId": 1787521691855,
+        "inviteId": "invite_1787519767117",
+        "attempt": 1
+      }
+    },
+    {
+      "id": 1787521691855,
+      "time": "2026-08-23T21:48:11.855Z",
+      "action": "email_queue_reenqueue",
+      "actor": "arjun@skillbridge.ai",
+      "target": "invitee1@example.local",
+      "details": {
+        "inviteId": "invite_1787519767117",
+        "queueId": 1787521691855
+      }
+    },
+    {
+      "id": 1787520184468,
+      "time": "2026-08-23T21:23:04.468Z",
+      "action": "password_reset_completed",
+      "actor": "student1@example.local",
+      "target": null,
+      "details": {
+        "by": "::1"
+      }
+    },
+    {
+      "id": 1787519597220,
+      "time": "2026-08-23T21:13:17.220Z",
+      "action": "reset_email_sent_success",
+      "actor": "system",
+      "target": "student1@example.local",
+      "details": {
+        "jobId": 1787519592333,
+        "resetId": "reset_1787519592332",
+        "attempt": 1
+      }
+    },
+    {
+      "id": 1787519593589,
+      "time": "2026-08-23T21:13:13.589Z",
+      "action": "password_reset_completed",
+      "actor": "student1@example.local",
+      "target": null,
+      "details": {
+        "by": "::1"
+      }
+    },
+    {
+      "id": 1787519592333,
+      "time": "2026-08-23T21:13:12.333Z",
+      "action": "password_reset_requested",
+      "actor": "student1@example.local",
+      "target": null,
+      "details": {
+        "requestor": "::1"
+      }
+    },
+    {
+      "id": 1787519358968,
+      "time": "2026-08-23T21:09:18.968Z",
+      "action": "reset_job_no_smtp",
+      "actor": "system",
+      "target": "student1@example.local",
+      "details": {
+        "jobId": 1787519357378,
+        "resetId": "reset_1787519357378"
+      }
+    },
+    {
+      "id": 1787519357378,
+      "time": "2026-08-23T21:09:17.378Z",
+      "action": "password_reset_requested",
+      "actor": "student1@example.local",
+      "target": null,
+      "details": {
+        "requestor": "::1"
+      }
+    },
+    {
+      "id": 1787519274824,
+      "time": "2026-08-23T21:07:54.824Z",
+      "action": "reset_job_no_smtp",
+      "actor": "system",
+      "target": "student1@example.local",
+      "details": {
+        "jobId": 1787519271420,
+        "resetId": "reset_1787519271420"
+      }
+    },
+    {
+      "id": 1787519272820,
+      "time": "2026-08-23T21:07:52.820Z",
+      "action": "verify_job_no_smtp",
+      "actor": "system",
+      "target": "student1@example.local",
+      "details": {
+        "jobId": 1787519271414,
+        "verifyId": "verify_1787519271414"
+      }
+    },
+    {
+      "id": 1787519272816,
+      "time": "2026-08-23T21:07:52.816Z",
+      "action": "verify_job_no_smtp",
+      "actor": "system",
+      "target": "testco+owner@example.local",
+      "details": {
+        "jobId": 1787519271362,
+        "verifyId": "verify_1787519271361"
+      }
+    },
+    {
+      "id": 1787519271420,
+      "time": "2026-08-23T21:07:51.420Z",
+      "action": "password_reset_requested",
+      "actor": "student1@example.local",
+      "target": null,
+      "details": {
+        "requestor": "::1"
+      }
+    },
+    {
+      "id": 1787519271414,
+      "time": "2026-08-23T21:07:51.414Z",
+      "action": "user_register",
+      "actor": "student1@example.local",
+      "target": null,
+      "details": {
+        "role": "student",
+        "companyId": null
+      }
+    },
+    {
+      "id": 1787519271362,
+      "time": "2026-08-23T21:07:51.362Z",
+      "action": "user_register",
+      "actor": "testco+owner@example.local",
+      "target": null,
+      "details": {
+        "role": "industry",
+        "companyId": 1787519271357
+      }
+    },
+    {
+      "id": 1787519271359,
+      "time": "2026-08-23T21:07:51.359Z",
+      "action": "company_create",
+      "actor": "testco+owner@example.local",
+      "target": null,
+      "details": {
+        "companyId": 1787519271357,
+        "name": "TestCo"
+      }
+    },
+    {
+      "id": 1787514475668,
+      "time": "2026-08-23T19:47:55.668Z",
+      "action": "user_delete",
+      "actor": "arjun@skillbridge.ai",
+      "target": "testuser2@example.com",
+      "details": {
+        "deletedAt": "2026-08-23T19:47:55.668Z"
+      }
+    },
+    {
+      "id": 1787514475621,
+      "time": "2026-08-23T19:47:55.621Z",
+      "action": "role_change",
+      "actor": "arjun@skillbridge.ai",
+      "target": "testuser2@example.com",
+      "details": {
+        "from": "admin",
+        "to": "user"
+      }
+    },
+    {
+      "id": 1787514475523,
+      "time": "2026-08-23T19:47:55.523Z",
+      "action": "password_reset",
+      "actor": "arjun@skillbridge.ai",
+      "target": "testuser2@example.com",
+      "details": {
+        "by": "arjun@skillbridge.ai"
+      }
+    },
+    {
+      "id": 1787514475435,
+      "time": "2026-08-23T19:47:55.435Z",
+      "action": "role_change",
+      "actor": "arjun@skillbridge.ai",
+      "target": "testuser2@example.com",
+      "details": {
+        "from": "user",
+        "to": "admin"
+      }
+    },
+    {
+      "id": 1787514138230,
+      "time": "2026-08-23T19:42:18.230Z",
+      "action": "undo_delete",
+      "actor": "arjun@skillbridge.ai",
+      "target": "testuser@example.com",
+      "details": {
+        "restoredAt": "2026-08-23T19:42:18.230Z"
+      }
+    },
+    {
+      "id": 1787514138220,
+      "time": "2026-08-23T19:42:18.220Z",
+      "action": "user_delete",
+      "actor": "arjun@skillbridge.ai",
+      "target": "testuser@example.com",
+      "details": {
+        "deletedAt": "2026-08-23T19:42:18.220Z"
+      }
+    },
+    {
+      "id": 1787514138211,
+      "time": "2026-08-23T19:42:18.211Z",
+      "action": "password_reset",
+      "actor": "arjun@skillbridge.ai",
+      "target": "testuser@example.com",
+      "details": {
+        "by": "arjun@skillbridge.ai"
+      }
+    },
+    {
+      "id": 1787514138165,
+      "time": "2026-08-23T19:42:18.165Z",
+      "action": "role_change",
+      "actor": "arjun@skillbridge.ai",
+      "target": "testuser@example.com",
+      "details": {
+        "from": "user",
+        "to": "admin"
+      }
+    }
+  ],
+  "deletedUsers": {
+    "testuser2@example.com": {
+      "user": {
+        "email": "testuser2@example.com",
+        "name": "Test User2",
+        "passwordHash": "0a126242ba7f6fa53edb87078e287ce6e77469e60e55185d87bdd4ed55537ada0184641e8de71a2b62b6ea939c7d5111fca0212facd0f6702a57ffc553f1044d",
+        "salt": "c78f61334885cc3ba76e2d3cf9aad7b6",
+        "role": "user"
+      },
+      "data": {
+        "profile": {
+          "name": "Test User2",
+          "track": "Explore",
+          "email": "testuser2@example.com"
+        },
+        "goal": "AI Engineer",
+        "applications": [],
+        "certifications": [
+          {
+            "id": 1,
+            "name": "AWS Cloud Practitioner",
+            "provider": "Amazon Web Services",
+            "relevance": "Cloud deployment",
+            "status": "Recommended"
+          },
+          {
+            "id": 2,
+            "name": "TensorFlow Developer Certificate",
+            "provider": "TensorFlow",
+            "relevance": "Deep Learning",
+            "status": "In progress"
+          },
+          {
+            "id": 3,
+            "name": "Docker Foundations",
+            "provider": "Docker",
+            "relevance": "Production APIs",
+            "status": "Planned"
+          }
+        ],
+        "skillGaps": [
+          {
+            "name": "FastAPI",
+            "progress": 35,
+            "id": 1
+          },
+          {
+            "name": "Docker",
+            "progress": 30,
+            "id": 2
+          },
+          {
+            "name": "Deep Learning",
+            "progress": 55,
+            "id": 3
+          }
+        ],
+        "resumeChecklist": [
+          {
+            "id": 1,
+            "label": "Contact details",
+            "detail": "Email, phone, and location",
+            "complete": true
+          },
+          {
+            "id": 2,
+            "label": "Professional summary",
+            "detail": "A clear AI Engineer introduction",
+            "complete": true
+          },
+          {
+            "id": 3,
+            "label": "Technical skills",
+            "detail": "Python, ML, and deployment tools",
+            "complete": true
+          },
+          {
+            "id": 4,
+            "label": "Featured projects",
+            "detail": "Add one production-ready project",
+            "complete": false
+          },
+          {
+            "id": 5,
+            "label": "Resume PDF",
+            "detail": "Upload your latest tailored resume",
+            "complete": false
+          }
+        ],
+        "learningResources": [
+          {
+            "id": 1,
+            "skill": "FastAPI",
+            "title": "Production APIs with FastAPI",
+            "meta": "6 lessons · 2 hours",
+            "progress": 20,
+            "color": "green"
+          },
+          {
+            "id": 2,
+            "skill": "Docker",
+            "title": "Ship your first ML service",
+            "meta": "8 lessons · 3 hours",
+            "progress": 0,
+            "color": "coral"
+          },
+          {
+            "id": 3,
+            "skill": "Deep Learning",
+            "title": "Neural networks, clearly explained",
+            "meta": "10 lessons · 4 hours",
+            "progress": 60,
+            "color": "yellow"
+          }
+        ],
+        "projects": [
+          {
+            "id": 1,
+            "title": "Customer churn predictor",
+            "description": "A tested ML service that predicts customer risk from product activity.",
+            "skills": [
+              "Python",
+              "Scikit-learn"
+            ],
+            "status": "Complete"
+          },
+          {
+            "id": 2,
+            "title": "Production prediction API",
+            "description": "Deploy a model with FastAPI, Docker, health checks, and clear documentation.",
+            "skills": [
+              "FastAPI",
+              "Docker"
+            ],
+            "status": "In progress"
+          },
+          {
+            "id": 3,
+            "title": "Neural image classifier",
+            "description": "Train, evaluate, and explain a neural network on a real dataset.",
+            "skills": [
+              "PyTorch",
+              "Deep Learning"
+            ],
+            "status": "Planned"
+          }
+        ],
+        "settings": {
+          "emailUpdates": true,
+          "weeklyDigest": true,
+          "opportunityAlerts": false
+        },
+        "mentorshipRequests": [],
+        "notifications": [],
+        "assessmentState": {
+          "lastResult": null
+        },
+        "skillMap": [
+          {
+            "id": 1,
+            "name": "Python",
+            "level": 92,
+            "group": "Core",
+            "next": "Build a typed service with tests."
+          },
+          {
+            "id": 2,
+            "name": "Machine Learning",
+            "level": 84,
+            "group": "Core",
+            "next": "Compare three model approaches on one dataset."
+          },
+          {
+            "id": 3,
+            "name": "FastAPI",
+            "level": 35,
+            "group": "Developing",
+            "next": "Create a /predict endpoint."
+          },
+          {
+            "id": 4,
+            "name": "Docker",
+            "level": 30,
+            "group": "Developing",
+            "next": "Containerize your ML service."
+          },
+          {
+            "id": 5,
+            "name": "Cloud deployment",
+            "level": 18,
+            "group": "Target",
+            "next": "Deploy a container with health checks."
+          },
+          {
+            "id": 6,
+            "name": "Deep Learning",
+            "level": 55,
+            "group": "Developing",
+            "next": "Train and evaluate a neural network."
+          }
+        ]
+      },
+      "deletedAt": "2026-08-23T19:47:55.668Z",
+      "actor": "arjun@skillbridge.ai"
+    }
+  },
+  "smtp": {
+    "host": "smtp.ethereal.email",
+    "port": 587,
+    "user": "fmqhfkqlilwb74um@ethereal.email",
+    "pass": "KXJ4kg1PeAVnR4y8Wb",
+    "from": "no-reply@skillbridge.test",
+    "retries": 3,
+    "retryDelayMs": 1000
+  },
+  "emailQueue": [],
+  "companies": [
+    {
+      "id": 1787519271357,
+      "name": "TestCo",
+      "owner": "testco+owner@example.local",
+      "createdAt": "2026-08-23T21:07:51.358Z"
+    }
+  ],
+  "companyInvites": [
+    {
+      "id": "invite_1787519767117",
+      "companyId": 1787519271357,
+      "companyName": "TestCo",
+      "inviterEmail": "testco+owner@example.local",
+      "inviteeEmail": "invitee1@example.local",
+      "role": "industry",
+      "tokenHash": "c1970d0a4e3a7b2df91193e71fb2f3c9f36f6cdd703800450fb510fe9c24a281",
+      "createdAt": 1787519767117,
+      "accepted": true,
+      "emailSent": true,
+      "emailAttempts": [
+        {
+          "attempt": 1,
+          "time": "2026-08-23T22:16:57.472Z",
+          "success": true,
+          "info": "<524f9f0e-ba54-e8a2-975c-af21727ae64a@skillbridge.test>"
+        },
+        {
+          "attempt": 0,
+          "time": "2026-08-23T22:16:48.648Z",
+          "note": "reissued by admin"
+        },
+        {
+          "attempt": 1,
+          "time": "2026-08-23T21:48:19.526Z",
+          "success": true,
+          "info": "<5a49c860-e67d-fe84-e833-cdf12d482827@skillbridge.test>"
+        },
+        {
+          "attempt": 0,
+          "time": "2026-08-23T21:48:11.854Z",
+          "note": "reissued by admin"
+        },
+        {
+          "time": "2026-08-23T21:16:12.165Z",
+          "success": true,
+          "info": "<95ce03dc-772b-5ac4-959f-087ef813c56e@skillbridge.test>"
+        }
+      ],
+      "emailInfo": "<524f9f0e-ba54-e8a2-975c-af21727ae64a@skillbridge.test>",
+      "acceptedAt": 1787520864304,
+      "emailError": null
+    }
+  ]
+}

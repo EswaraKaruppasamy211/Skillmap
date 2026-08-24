@@ -1,0 +1,14 @@
+{
+  "name": "skillbridge-career-os",
+  "version": "1.0.0",
+  "private": true,
+  "description": "SkillBridge career dashboard with a small Node backend",
+  "scripts": {
+      "start": "node backend/server.js"
+  },
+  "dependencies": {
+    "nodemailer": "^9.0.5",
+    "sqlite": "^5.1.1",
+    "sqlite3": "^5.1.6"
+  }
+}
