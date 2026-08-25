@@ -667,6 +667,10 @@ body {
 }
 
 /* Responsive Breakpoints */
+/* ==========================================================================
+   NATIVE MOBILE APP UI & RESPONSIVE STYLING (< 768px)
+   ========================================================================== */
+
 @media (max-width: 1200px) {
   .pipeline-container-flex { flex-wrap: wrap; }
   .pipeline-stage-col { width: 48%; }
@@ -679,13 +683,251 @@ body {
 }
 
 @media (max-width: 768px) {
-  .pipeline-stage-col { width: 100%; }
-  .workspace-layout { flex-direction: column; }
-  .sidebar { width: 100%; border-right: none; border-bottom: 1px solid var(--border-color); }
-  .grid-4, .grid-3, .grid-2 { grid-template-columns: 1fr; }
-  .header-center { display: none; }
-  .hero-title { font-size: 2.1rem; }
-  .main-workspace { padding: 1.25rem 1rem; }
+  body {
+    padding-bottom: 74px !important; /* Space for fixed bottom navigation bar */
+  }
+
+  .app-header {
+    height: 58px;
+    padding: 0 1rem;
+  }
+
+  .brand-name {
+    font-size: 1.05rem;
+  }
+
+  .brand-logo {
+    gap: 0.6rem;
+  }
+
+  .logo-icon-cyber {
+    width: 32px;
+    height: 32px;
+    font-size: 0.95rem;
+  }
+
+  .header-left {
+    gap: 0.5rem;
+  }
+
+  .icon-btn {
+    width: 38px;
+    height: 38px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    color: var(--text-main);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.05rem;
+    cursor: pointer;
+  }
+
+  /* Slide-out Mobile App Sidebar Drawer */
+  .workspace-layout {
+    flex-direction: column;
+    min-height: auto;
+  }
+
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: 280px !important;
+    z-index: 1001;
+    background: #131924;
+    border-right: 1px solid rgba(56, 189, 248, 0.3);
+    box-shadow: 10px 0 35px rgba(0, 0, 0, 0.7);
+    transform: translateX(-100%);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex !important;
+    flex-direction: column;
+    padding: 1.25rem 0.85rem;
+    overflow-y: auto;
+  }
+
+  .sidebar.mobile-open {
+    transform: translateX(0);
+  }
+
+  .mobile-drawer-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(11, 14, 20, 0.8);
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+    z-index: 1000;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+  }
+
+  .mobile-drawer-backdrop.active {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .main-workspace {
+    padding: 1rem 0.85rem 5rem 0.85rem !important;
+    width: 100%;
+  }
+
+  /* Mobile App Bottom Navigation Bar */
+  .mobile-bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 64px;
+    background: rgba(15, 20, 31, 0.96);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-top: 1px solid rgba(56, 189, 248, 0.25);
+    display: flex !important;
+    align-items: center;
+    justify-content: space-around;
+    z-index: 999;
+    box-shadow: 0 -5px 25px rgba(0, 0, 0, 0.5);
+    padding: 0 0.25rem;
+  }
+
+  .mobile-nav-tab {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    color: #94a3b8;
+    text-decoration: none;
+    font-size: 0.68rem;
+    font-weight: 600;
+    padding: 6px 0;
+    transition: all 0.2s ease;
+    background: none;
+    border: none;
+    cursor: pointer;
+  }
+
+  .mobile-nav-tab i {
+    font-size: 1.15rem;
+    transition: transform 0.2s ease, color 0.2s ease;
+  }
+
+  .mobile-nav-tab.active {
+    color: #38bdf8;
+  }
+
+  .mobile-nav-tab.active i {
+    transform: translateY(-2px) scale(1.12);
+    color: #00f2fe;
+  }
+
+  /* Reposition Floating Sticky Watermark for Mobile App */
+  .watermark-sticky-badge {
+    bottom: 72px !important;
+    right: 0.75rem !important;
+    font-size: 0.7rem !important;
+    padding: 0.3rem 0.75rem !important;
+    background: rgba(19, 25, 36, 0.95);
+    border-color: rgba(56, 189, 248, 0.5);
+  }
+
+  /* 8-Stage ATS Pipeline Horizontal Swipe Layout on Mobile */
+  .pipeline-container-flex {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 1rem;
+    gap: 0.85rem !important;
+  }
+
+  .pipeline-stage-col {
+    flex: 0 0 84vw !important;
+    min-width: 84vw !important;
+    max-width: 84vw !important;
+    scroll-snap-align: start;
+    background: rgba(15, 20, 31, 0.7);
+    border: 1px solid var(--border-color);
+    border-radius: 14px;
+    padding: 0.85rem;
+  }
+
+  /* Mobile App Hero Section */
+  .hero-section {
+    padding: 2.5rem 1rem 2rem 1rem !important;
+  }
+
+  .hero-title {
+    font-size: 1.85rem !important;
+    line-height: 1.25 !important;
+  }
+
+  .hero-description {
+    font-size: 0.85rem !important;
+    margin-bottom: 1.5rem !important;
+  }
+
+  /* Card & Grid Adjustments */
+  .grid-4, .grid-3, .grid-2 {
+    grid-template-columns: 1fr !important;
+    gap: 0.85rem !important;
+  }
+
+  .glass-card-cyber {
+    border-radius: 14px;
+    padding: 1.15rem !important;
+  }
+
+  .metric-card-saas {
+    border-radius: 14px;
+    padding: 1rem !important;
+  }
+
+  /* Full-width touch-friendly buttons */
+  .btn {
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Bottom-Sheet Mobile Modals */
+  .modal-backdrop {
+    align-items: flex-end !important;
+    padding: 0 !important;
+  }
+
+  .modal-content {
+    border-radius: 22px 22px 0 0 !important;
+    max-height: 88vh !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    border-bottom: none !important;
+    padding: 1.25rem !important;
+    animation: slideUpMobile 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  @keyframes slideUpMobile {
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
+  }
+}
+
+@media (min-width: 769px) {
+  .mobile-bottom-nav {
+    display: none !important;
+  }
+  .mobile-drawer-backdrop {
+    display: none !important;
+  }
+  .icon-btn.hidden-desktop {
+    display: none !important;
+  }
 }
 
 /* Global Watermark Styles */
@@ -729,4 +971,5 @@ body {
   box-shadow: 0 0 15px rgba(56, 189, 248, 0.4);
   transform: translateY(-2px);
 }
+
 

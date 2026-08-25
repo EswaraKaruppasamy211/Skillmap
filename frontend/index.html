@@ -2,7 +2,10 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#0b0e14">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>SkillBridge AI — Multi-Company Recruitment Platform</title>
   <link rel="stylesheet" href="styles.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -13,11 +16,14 @@
 </head>
 <body class="bg-obsidian font-sans antialiased text-slate-100">
 
+  <!-- MOBILE DRAWER BACKDROP -->
+  <div id="mobile-drawer-backdrop" class="mobile-drawer-backdrop" onclick="closeMobileDrawer()"></div>
+
   <!-- TOP NAVIGATION BAR -->
   <header id="top-navbar" class="app-header shadow-lg sticky-top">
     <div class="header-container">
       <div class="header-left flex-align gap-3">
-        <button id="toggle-sidebar-btn" class="icon-btn text-muted hidden-desktop"><i class="fa-solid fa-bars"></i></button>
+        <button id="toggle-sidebar-btn" class="icon-btn text-muted hidden-desktop" onclick="toggleMobileDrawer()"><i class="fa-solid fa-bars"></i></button>
         <a href="#" class="brand-logo flex-align gap-3" onclick="showLandingPage()">
           <div class="logo-icon-cyber"><i class="fa-solid fa-wand-magic-sparkles"></i></div>
           <div class="brand-name text-white">SkillBridge <span class="badge-cyber text-xs">Multi-Tenant Platform</span></div>
@@ -530,6 +536,11 @@
   <div class="watermark-sticky-badge">
     <i class="fa-solid fa-code text-cyan"></i> Created by @Eswara Karuppasamy K
   </div>
+
+  <!-- NATIVE MOBILE BOTTOM NAVIGATION BAR -->
+  <nav id="mobile-bottom-nav" class="mobile-bottom-nav">
+    <!-- Populated dynamically in app.js based on role -->
+  </nav>
 
   <script src="app.js"></script>
 </body>

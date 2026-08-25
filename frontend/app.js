@@ -45,6 +45,7 @@ function showLandingPage() {
   document.getElementById('user-nav-controls').classList.add('hidden');
   document.getElementById('landing-page').classList.remove('hidden');
   document.getElementById('app-workspace').classList.add('hidden');
+  renderMobileBottomNav('guest');
 }
 
 function showUserWorkspace() {
@@ -61,6 +62,20 @@ function showUserWorkspace() {
   setupRoleSidebar(currentUser.role);
 }
 
+function toggleMobileDrawer() {
+  const sidebar = document.getElementById('app-sidebar');
+  const backdrop = document.getElementById('mobile-drawer-backdrop');
+  if (sidebar) sidebar.classList.toggle('mobile-open');
+  if (backdrop) backdrop.classList.toggle('active');
+}
+
+function closeMobileDrawer() {
+  const sidebar = document.getElementById('app-sidebar');
+  const backdrop = document.getElementById('mobile-drawer-backdrop');
+  if (sidebar) sidebar.classList.remove('mobile-open');
+  if (backdrop) backdrop.classList.remove('active');
+}
+
 function setupRoleSidebar(role) {
   document.querySelectorAll('.role-sidebar-links').forEach(el => el.classList.add('hidden'));
   if (role === 'student') {
@@ -72,6 +87,86 @@ function setupRoleSidebar(role) {
   } else if (role === 'college') {
     document.getElementById('sidebar-college-links').classList.remove('hidden');
     navigateTo('college-dashboard');
+  }
+  renderMobileBottomNav(role);
+}
+
+function renderMobileBottomNav(role) {
+  const container = document.getElementById('mobile-bottom-nav');
+  if (!container) return;
+
+  if (role === 'student') {
+    container.innerHTML = `
+      <button class="mobile-nav-tab active" data-target="student-dashboard" onclick="navigateTo('student-dashboard')">
+        <i class="fa-solid fa-house"></i>
+        <span>Home</span>
+      </button>
+      <button class="mobile-nav-tab" data-target="internships" onclick="navigateTo('internships')">
+        <i class="fa-solid fa-briefcase"></i>
+        <span>Jobs</span>
+      </button>
+      <button class="mobile-nav-tab" data-target="ai-skill-score" onclick="navigateTo('ai-skill-score')">
+        <i class="fa-solid fa-award"></i>
+        <span>AI Score</span>
+      </button>
+      <button class="mobile-nav-tab" data-target="student-applications" onclick="navigateTo('student-applications')">
+        <i class="fa-solid fa-envelope-open-text"></i>
+        <span>Applied</span>
+      </button>
+      <button class="mobile-nav-tab" data-target="student-profile" onclick="navigateTo('student-profile')">
+        <i class="fa-solid fa-user"></i>
+        <span>Profile</span>
+      </button>
+    `;
+  } else if (role === 'company') {
+    container.innerHTML = `
+      <button class="mobile-nav-tab active" data-target="company-dashboard" onclick="navigateTo('company-dashboard')">
+        <i class="fa-solid fa-chart-line"></i>
+        <span>ATS Pipeline</span>
+      </button>
+      <button class="mobile-nav-tab" data-target="company-jobs" onclick="navigateTo('company-jobs')">
+        <i class="fa-solid fa-plus-circle"></i>
+        <span>Add Job</span>
+      </button>
+      <button class="mobile-nav-tab" data-target="talent-finder" onclick="navigateTo('talent-finder')">
+        <i class="fa-solid fa-user-check"></i>
+        <span>Candidates</span>
+      </button>
+      <button class="mobile-nav-tab" onclick="handleLogout()">
+        <i class="fa-solid fa-arrow-right-from-bracket"></i>
+        <span>Logout</span>
+      </button>
+    `;
+  } else if (role === 'college') {
+    container.innerHTML = `
+      <button class="mobile-nav-tab active" data-target="college-dashboard" onclick="navigateTo('college-dashboard')">
+        <i class="fa-solid fa-graduation-cap"></i>
+        <span>Analytics</span>
+      </button>
+      <button class="mobile-nav-tab" onclick="handleLogout()">
+        <i class="fa-solid fa-arrow-right-from-bracket"></i>
+        <span>Logout</span>
+      </button>
+    `;
+  } else {
+    container.innerHTML = `
+      <button class="mobile-nav-tab active" onclick="showLandingPage()">
+        <i class="fa-solid fa-house"></i>
+        <span>Home</span>
+      </button>
+      <button class="mobile-nav-tab" onclick="openRoleAuthModal('student')">
+        <i class="fa-solid fa-graduation-cap"></i>
+        <span>Student</span>
+      </button>
+      <button class="mobile-nav-tab" onclick="openRoleAuthModal('company')">
+        <i class="fa-solid fa-building"></i>
+        <span>Company</span>
+      </button>
+      <button class="mobile-nav-tab" onclick="openRoleAuthModal('college')">
+        <i class="fa-solid fa-university"></i>
+        <span>University</span>
+      </button>
+    `;
   }
 }
 
@@ -86,9 +181,15 @@ function setupSidebarNavigation() {
 }
 
 function navigateTo(viewId) {
+  closeMobileDrawer();
+
   document.querySelectorAll('.sidebar-item').forEach(el => el.classList.remove('active'));
   const activeItem = document.querySelector(`.sidebar-item[data-target="${viewId}"]`);
   if (activeItem) activeItem.classList.add('active');
+
+  document.querySelectorAll('.mobile-nav-tab').forEach(el => el.classList.remove('active'));
+  const activeMobileTab = document.querySelector(`.mobile-nav-tab[data-target="${viewId}"]`);
+  if (activeMobileTab) activeMobileTab.classList.add('active');
 
   document.querySelectorAll('.workspace-view').forEach(view => view.classList.add('hidden'));
   const targetView = document.getElementById(`view-${viewId}`);
