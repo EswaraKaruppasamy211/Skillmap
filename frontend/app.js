@@ -63,6 +63,11 @@ function showAppWorkspace() {
 
 // ENFORCED SECURITY PORTAL SWITCHER & ROUTE GUARDS
 function switchPortalRole(targetRole) {
+  if (targetRole === 'student' && (!currentUser || currentUser.role !== 'student')) {
+    openStudentAuthModal('login');
+    return;
+  }
+
   if (targetRole === 'company' && (!currentUser || currentUser.role !== 'company')) {
     openCompanyAuthModal('login');
     return;
@@ -123,6 +128,76 @@ function navigateTo(viewId) {
   else if (viewId === 'talent-finder') loadTalentFinder();
   else if (viewId === 'college-dashboard') loadCollegeDashboard();
   else if (viewId === 'college-students') loadCollegeStudentDirectory();
+}
+
+// STUDENT AUTH HANDLERS
+function openStudentAuthModal(tab = 'login') {
+  openModal('student-auth-modal');
+  switchStudentAuthTab(tab);
+}
+
+function switchStudentAuthTab(tab) {
+  const loginForm = document.getElementById('student-login-form');
+  const regForm = document.getElementById('student-register-form');
+  const title = document.getElementById('student-auth-title');
+
+  if (tab === 'login') {
+    title.innerHTML = '<i class="fa-solid fa-graduation-cap text-blue"></i> Student Sign In';
+    loginForm.classList.remove('hidden');
+    regForm.classList.add('hidden');
+  } else {
+    title.innerHTML = '<i class="fa-solid fa-user-plus text-blue"></i> Register Student Account';
+    regForm.classList.remove('hidden');
+    loginForm.classList.add('hidden');
+  }
+}
+
+async function handleStudentLoginSubmit(e) {
+  e.preventDefault();
+  const identity = document.getElementById('stu-login-id').value.trim();
+  const password = document.getElementById('stu-login-pass').value.trim();
+
+  try {
+    const data = await apiFetch('/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({ identity, password, role: 'student' })
+    });
+    authToken = data.token;
+    localStorage.setItem('sb_token', authToken);
+    currentUser = data.user;
+    currentProfile = data.profile;
+    closeModal('student-auth-modal');
+    switchPortalRole('student');
+    showAppWorkspace();
+  } catch (err) {
+    alert(err.message || 'Student Sign In Failed.');
+  }
+}
+
+async function handleStudentRegisterSubmit(e) {
+  e.preventDefault();
+  const fullName = document.getElementById('stu-reg-name').value.trim();
+  const email = document.getElementById('stu-reg-email').value.trim();
+  const mobile = document.getElementById('stu-reg-mobile').value.trim();
+  const studentId = document.getElementById('stu-reg-id').value.trim();
+  const password = document.getElementById('stu-reg-pass').value.trim();
+
+  try {
+    const data = await apiFetch('/auth/register', {
+      method: 'POST',
+      body: JSON.stringify({ fullName, email, mobile, studentId, password, role: 'student' })
+    });
+    authToken = data.token;
+    localStorage.setItem('sb_token', authToken);
+    currentUser = data.user;
+    currentProfile = data.profile;
+    closeModal('student-auth-modal');
+    alert('Student Account Registered Successfully!');
+    switchPortalRole('student');
+    showAppWorkspace();
+  } catch (err) {
+    alert(err.message || 'Student Registration Failed.');
+  }
 }
 
 // COMPANY AUTH HANDLERS
@@ -444,6 +519,6 @@ async function loadCollegeStudentDirectory() {
 function openModal(id) { const el = document.getElementById(id); if (el) el.classList.remove('hidden'); }
 function closeModal(id) { const el = document.getElementById(id); if (el) el.classList.add('hidden'); }
 function openLogoutModal() { handleLogout(); }
-function handleLogout() { authToken = null; currentUser = null; showGuestLanding(); }
+function handleLogout() { authToken = null; currentUser = null; currentProfile = null; localStorage.removeItem('sb_token'); showGuestLanding(); }
 function closeMobileDrawer() { const sidebar = document.getElementById('app-sidebar'); if (sidebar) sidebar.classList.remove('mobile-open'); }
 function toggleMobileDrawer() { const sidebar = document.getElementById('app-sidebar'); if (sidebar) sidebar.classList.toggle('mobile-open'); }

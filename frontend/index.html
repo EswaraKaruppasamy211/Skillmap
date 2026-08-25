@@ -73,7 +73,7 @@
       Unified 3-Portal ecosystem connecting Students, Corporate Recruiters, and University Placement Admins.
     </p>
     <div class="flex-align gap-3" style="justify-content: center;">
-      <button class="btn-saas btn-primary" style="padding: 0.8rem 1.5rem;" onclick="switchPortalRole('student')">Student Portal</button>
+      <button class="btn-saas btn-primary" style="padding: 0.8rem 1.5rem;" onclick="openStudentAuthModal('login')">Student Portal</button>
       <button class="btn-saas btn-outline" style="padding: 0.8rem 1.5rem;" onclick="switchPortalRole('company')">Company Recruiter</button>
       <button class="btn-saas btn-outline" style="padding: 0.8rem 1.5rem;" onclick="switchPortalRole('college')">University Admin</button>
     </div>
@@ -237,6 +237,56 @@
       </section>
 
     </main>
+  </div>
+
+  <!-- ENFORCED STUDENT AUTHENTICATION MODAL -->
+  <div id="student-auth-modal" class="modal-backdrop hidden">
+    <div class="modal-content" style="max-width: 460px; padding: 2rem;">
+      <div class="flex-between mb-4">
+        <h3 id="student-auth-title" style="font-weight: 800;"><i class="fa-solid fa-graduation-cap text-blue"></i> Student Sign In</h3>
+        <button class="btn-saas btn-outline" style="padding: 0.3rem 0.6rem;" onclick="closeModal('student-auth-modal')"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+
+      <!-- STUDENT LOGIN FORM -->
+      <form id="student-login-form" onsubmit="handleStudentLoginSubmit(event)">
+        <div class="mb-3">
+          <label class="block text-xs font-bold mb-1">Email / Student ID *</label>
+          <input type="text" id="stu-login-id" class="saas-input" value="arjun@skillbridge.ai" placeholder="arjun@skillbridge.ai or STU-2026-101" required />
+        </div>
+        <div class="mb-4">
+          <label class="block text-xs font-bold mb-1">Password *</label>
+          <input type="password" id="stu-login-pass" class="saas-input" value="Student@123" required />
+        </div>
+        <button type="submit" class="btn-saas btn-primary w-full mb-3" style="padding:0.75rem;">Sign In to Student Portal</button>
+        <p class="text-xs text-center" style="color:var(--text-muted);">Don't have an account? <a href="#" onclick="switchStudentAuthTab('register')" style="color:var(--text-blue); font-weight:700;">Register Student Account</a></p>
+      </form>
+
+      <!-- STUDENT REGISTER FORM -->
+      <form id="student-register-form" class="hidden" onsubmit="handleStudentRegisterSubmit(event)">
+        <div class="mb-2">
+          <label class="block text-xs font-bold mb-1">Full Name *</label>
+          <input type="text" id="stu-reg-name" class="saas-input" placeholder="e.g. Arjun Sharma" required />
+        </div>
+        <div class="mb-2">
+          <label class="block text-xs font-bold mb-1">Email Address *</label>
+          <input type="email" id="stu-reg-email" class="saas-input" placeholder="arjun@skillbridge.ai" required />
+        </div>
+        <div class="mb-2">
+          <label class="block text-xs font-bold mb-1">Mobile Number</label>
+          <input type="text" id="stu-reg-mobile" class="saas-input" placeholder="+91 9876543210" />
+        </div>
+        <div class="mb-2">
+          <label class="block text-xs font-bold mb-1">Student ID *</label>
+          <input type="text" id="stu-reg-id" class="saas-input" placeholder="STU-2026-101" required />
+        </div>
+        <div class="mb-3">
+          <label class="block text-xs font-bold mb-1">Password *</label>
+          <input type="password" id="stu-reg-pass" class="saas-input" placeholder="••••••••" required />
+        </div>
+        <button type="submit" class="btn-saas btn-primary w-full mb-3" style="padding:0.75rem;">Create Student Account</button>
+        <p class="text-xs text-center" style="color:var(--text-muted);">Already registered? <a href="#" onclick="switchStudentAuthTab('login')" style="color:var(--text-blue); font-weight:700;">Sign In</a></p>
+      </form>
+    </div>
   </div>
 
   <!-- ENFORCED COMPANY AUTHENTICATION MODAL -->
