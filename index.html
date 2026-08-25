@@ -70,27 +70,28 @@
   </header>
 
   <!-- LANDING HERO WITH INTERAPP BACKGROUND DESIGN -->
-  <div id="guest-landing" class="saas-card mb-6 relative overflow-hidden" style="margin: 2rem auto; max-width: 900px; text-align: center; padding: 3.5rem 2rem;">
+  <div id="guest-landing" class="saas-card mb-6 relative overflow-hidden" style="margin: 2.5rem auto; max-width: 850px; text-align: center; padding: 4rem 2rem;">
     <div class="hero-video-wrapper">
       <div class="hero-video-overlay"></div>
       <video class="hero-video-element" autoplay loop muted playsinline poster="https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=1920&q=80">
         <source src="https://assets.mixkit.co/videos/preview/mixkit-circuit-board-digital-technology-animation-40973-large.mp4" type="video/mp4">
       </video>
     </div>
-    <div class="relative" style="z-index: 10;">
-      <div class="logo-icon-saas" style="width: 64px; height: 64px; font-size: 1.8rem; margin: 0 auto 1.5rem auto;">
-        <i class="fa-solid fa-wand-magic-sparkles"></i>
+    <div class="relative" style="z-index: 10; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+      <!-- PERFECTLY ALIGNED BRAND LOGO ILLUSTRATION BADGE -->
+      <div class="logo-icon-saas shadow-lg" style="width: 72px; height: 72px; font-size: 2.2rem; margin: 0 auto 1.5rem auto; display: flex; align-items: center; justify-content: center; border-radius: 18px; background: linear-gradient(135deg, #38bdf8 0%, #9333ea 100%); box-shadow: 0 10px 30px rgba(56, 189, 248, 0.4);">
+        <i class="fa-solid fa-graduation-cap" style="color: #ffffff;"></i>
       </div>
-      <h1 style="font-size: 2.2rem; font-weight: 800; margin-bottom: 0.75rem; color: var(--text-primary);">
+      <h1 style="font-size: 2.3rem; font-weight: 800; margin-bottom: 0.85rem; color: var(--text-primary); line-height: 1.25;">
         Academia–Industry Collaboration Platform
       </h1>
-      <p style="color: var(--text-secondary); max-width: 650px; margin: 0 auto 2rem auto; font-size: 1rem;">
+      <p style="color: var(--text-secondary); max-width: 620px; margin: 0 auto 2.25rem auto; font-size: 1.05rem; line-height: 1.6;">
         Unified 3-Portal ecosystem connecting Students, Corporate Recruiters, and University Placement Admins.
       </p>
-      <div class="flex-align gap-3" style="justify-content: center;">
-        <button class="btn-saas btn-primary" style="padding: 0.8rem 1.5rem;" onclick="openStudentAuthModal('login')">Student Portal</button>
-        <button class="btn-saas btn-outline" style="padding: 0.8rem 1.5rem;" onclick="switchPortalRole('company')">Company Recruiter</button>
-        <button class="btn-saas btn-outline" style="padding: 0.8rem 1.5rem;" onclick="switchPortalRole('college')">University Admin</button>
+      <div class="flex-align gap-3 flex-wrap" style="justify-content: center; width: 100%;">
+        <button class="btn-saas btn-primary" style="padding: 0.85rem 1.75rem; font-size: 0.95rem;" onclick="openStudentAuthModal('login')"><i class="fa-solid fa-user-graduate"></i> Student Portal</button>
+        <button class="btn-saas btn-outline" style="padding: 0.85rem 1.75rem; font-size: 0.95rem;" onclick="switchPortalRole('company')"><i class="fa-solid fa-building"></i> Company Recruiter</button>
+        <button class="btn-saas btn-outline" style="padding: 0.85rem 1.75rem; font-size: 0.95rem;" onclick="switchPortalRole('college')"><i class="fa-solid fa-university"></i> University Admin</button>
       </div>
     </div>
   </div>
