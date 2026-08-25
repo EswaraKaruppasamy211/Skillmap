@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#ffffff">
+  <title>SkillBridge — Academia–Industry Collaboration Platform</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+
+  <!-- FIXED FULL-PAGE BACKGROUND VIDEO LAYER (INTERAPP DESIGN) -->
+  <div class="fixed-bg-video-wrapper">
+    <div class="fixed-bg-video-overlay"></div>
+    <video class="fixed-bg-video-element" autoplay loop muted playsinline poster="https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=1920&q=80">
+      <source src="https://assets.mixkit.co/videos/preview/mixkit-circuit-board-digital-technology-animation-40973-large.mp4" type="video/mp4">
+    </video>
+  </div>
+
+  <div id="mobile-drawer-backdrop" class="mobile-drawer-backdrop" onclick="closeMobileDrawer()"></div>
+
+  <!-- TOP NAVIGATION BAR & PORTAL SWITCHER -->
+  <header class="app-header shadow-sm sticky-top">
+    <div class="header-container">
+      <div class="flex-align gap-3">
+        <button id="toggle-sidebar-btn" class="btn-saas btn-outline hidden-desktop" onclick="toggleMobileDrawer()">
+          <i class="fa-solid fa-bars"></i>
+        </button>
+        <a href="#" class="brand-logo" onclick="navigateToRoleHome()">
+          <div class="logo-icon-saas"><i class="fa-solid fa-graduation-cap"></i></div>
+          <div class="brand-name">SkillBridge <span id="portal-badge" class="badge-saas">Student Module</span></div>
+        </a>
+      </div>
+
+      <!-- 3-WAY PORTAL SWITCHER PILLS -->
+      <div class="flex-align gap-2 hidden-mobile">
+        <button id="portal-pill-student" class="role-nav-pill active" onclick="switchPortalRole('student')">
+          <i class="fa-solid fa-user-graduate"></i> Student Portal
+        </button>
+        <button id="portal-pill-company" class="role-nav-pill" onclick="switchPortalRole('company')">
+          <i class="fa-solid fa-building"></i> Company Recruiter
+        </button>
+        <button id="portal-pill-college" class="role-nav-pill" onclick="switchPortalRole('college')">
+          <i class="fa-solid fa-university"></i> University Admin
+        </button>
+      </div>
+
+      <div class="flex-align gap-4">
+        <div id="guest-nav-controls" class="flex-align gap-2">
+          <button class="btn-saas btn-outline" onclick="openStudentAuthModal('login')">Sign In</button>
+          <button class="btn-saas btn-primary" onclick="openStudentAuthModal('register')">Register Account</button>
+        </div>
+
+        <div id="user-nav-controls" class="flex-align gap-3 hidden">
+          <div class="flex-align gap-2" style="cursor: pointer;">
+            <div id="user-avatar" class="logo-icon-saas" style="width:34px; height:34px; font-size:0.95rem;">A</div>
+            <div class="flex-col hidden-mobile text-left">
+              <span id="user-display-name" style="font-weight: 700; font-size:0.85rem; color:var(--text-primary);">Arjun Sharma</span>
+              <span id="user-display-id" style="font-size:0.7rem; color:var(--text-muted);">STU-2026-101</span>
+            </div>
+          </div>
+          <button class="btn-saas btn-outline" onclick="openLogoutModal()"><i class="fa-solid fa-right-from-bracket"></i></button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- LANDING HERO WITH INTERAPP BACKGROUND DESIGN -->
+  <div id="guest-landing" class="saas-card mb-6 relative overflow-hidden" style="margin: 2rem auto; max-width: 900px; text-align: center; padding: 3.5rem 2rem;">
+    <div class="hero-video-wrapper">
+      <div class="hero-video-overlay"></div>
+      <video class="hero-video-element" autoplay loop muted playsinline poster="https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=1920&q=80">
+        <source src="https://assets.mixkit.co/videos/preview/mixkit-circuit-board-digital-technology-animation-40973-large.mp4" type="video/mp4">
+      </video>
+    </div>
+    <div class="relative" style="z-index: 10;">
+      <div class="logo-icon-saas" style="width: 64px; height: 64px; font-size: 1.8rem; margin: 0 auto 1.5rem auto;">
+        <i class="fa-solid fa-wand-magic-sparkles"></i>
+      </div>
+      <h1 style="font-size: 2.2rem; font-weight: 800; margin-bottom: 0.75rem; color: var(--text-primary);">
+        Academia–Industry Collaboration Platform
+      </h1>
+      <p style="color: var(--text-secondary); max-width: 650px; margin: 0 auto 2rem auto; font-size: 1rem;">
+        Unified 3-Portal ecosystem connecting Students, Corporate Recruiters, and University Placement Admins.
+      </p>
+      <div class="flex-align gap-3" style="justify-content: center;">
+        <button class="btn-saas btn-primary" style="padding: 0.8rem 1.5rem;" onclick="openStudentAuthModal('login')">Student Portal</button>
+        <button class="btn-saas btn-outline" style="padding: 0.8rem 1.5rem;" onclick="switchPortalRole('company')">Company Recruiter</button>
+        <button class="btn-saas btn-outline" style="padding: 0.8rem 1.5rem;" onclick="switchPortalRole('college')">University Admin</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN WORKSPACE -->
+  <div id="app-workspace" class="workspace-layout hidden">
+    
+    <aside id="app-sidebar" class="sidebar">
+      <!-- STUDENT SIDEBAR LINKS -->
+      <div id="sidebar-student-links" class="role-sidebar-group">
+        <div class="menu-label">Student Navigation</div>
+        <a href="#" class="sidebar-item active" data-target="dashboard" onclick="navigateTo('dashboard')"><i class="fa-solid fa-house"></i> <span>Dashboard</span></a>
+        <a href="#" class="sidebar-item" data-target="profile" onclick="navigateTo('profile')"><i class="fa-solid fa-user"></i> <span>My Profile</span></a>
+        <a href="#" class="sidebar-item" data-target="academics" onclick="navigateTo('academics')"><i class="fa-solid fa-graduation-cap"></i> <span>Academics</span></a>
+        <a href="#" class="sidebar-item" data-target="skills" onclick="navigateTo('skills')"><i class="fa-solid fa-code"></i> <span>Skills</span></a>
+        <a href="#" class="sidebar-item" data-target="assessments" onclick="navigateTo('assessments')"><i class="fa-solid fa-chart-simple"></i> <span>Assessments</span></a>
+        <a href="#" class="sidebar-item" data-target="portfolio" onclick="navigateTo('portfolio')"><i class="fa-solid fa-folder-open"></i> <span>My Portfolio</span></a>
+        <a href="#" class="sidebar-item" data-target="ai-skill-analyzer" onclick="navigateTo('ai-skill-analyzer')"><i class="fa-solid fa-wand-magic-sparkles"></i> <span>AI Skill Analyzer</span></a>
+        <a href="#" class="sidebar-item" data-target="opportunities" onclick="navigateTo('opportunities')"><i class="fa-solid fa-briefcase"></i> <span>Opportunities</span></a>
+        <a href="#" class="sidebar-item" data-target="applications" onclick="navigateTo('applications')"><i class="fa-solid fa-paper-plane"></i> <span>Applications</span></a>
+        <a href="#" class="sidebar-item" data-target="notifications" onclick="navigateTo('notifications')"><i class="fa-solid fa-bell"></i> <span>Notifications</span></a>
+        <a href="#" class="sidebar-item" data-target="settings" onclick="navigateTo('settings')"><i class="fa-solid fa-gear"></i> <span>Settings</span></a>
+      </div>
+
+      <!-- COMPANY RECRUITER SIDEBAR LINKS -->
+      <div id="sidebar-company-links" class="role-sidebar-group hidden">
+        <div class="menu-label">Recruiter Portal</div>
+        <a href="#" class="sidebar-item active" data-target="company-dashboard" onclick="navigateTo('company-dashboard')"><i class="fa-solid fa-chart-line"></i> <span>ATS Pipeline</span></a>
+        <a href="#" class="sidebar-item" data-target="company-jobs" onclick="navigateTo('company-jobs')"><i class="fa-solid fa-plus-circle"></i> <span>Post New Job</span></a>
+        <a href="#" class="sidebar-item" data-target="talent-finder" onclick="navigateTo('talent-finder')"><i class="fa-solid fa-user-check"></i> <span>Talent Finder</span></a>
+      </div>
+
+      <!-- COLLEGE ADMIN SIDEBAR LINKS -->
+      <div id="sidebar-college-links" class="role-sidebar-group hidden">
+        <div class="menu-label">University Admin</div>
+        <a href="#" class="sidebar-item active" data-target="college-dashboard" onclick="navigateTo('college-dashboard')"><i class="fa-solid fa-graduation-cap"></i> <span>Placement Analytics</span></a>
+        <a href="#" class="sidebar-item" data-target="college-students" onclick="navigateTo('college-students')"><i class="fa-solid fa-users"></i> <span>Student Directory</span></a>
+        <a href="#" class="sidebar-item" data-target="campus-drives" onclick="navigateTo('campus-drives')"><i class="fa-solid fa-building-columns"></i> <span>Campus Drives</span></a>
+      </div>
+    </aside>
+
+    <main class="main-workspace">
+
+      <!-- STUDENT MODULE VIEWS -->
+      <section id="view-dashboard" class="workspace-view">
+        <div class="flex-between mb-6">
+          <div><h1 style="font-size: 1.6rem; font-weight: 800;" id="welcome-header">Welcome back 👋</h1><p style="color: var(--text-muted);">Academic profile & recruitment status overview.</p></div>
+          <button class="btn-saas btn-primary" onclick="navigateTo('ai-skill-analyzer')"><i class="fa-solid fa-wand-magic-sparkles"></i> AI Career Match</button>
+        </div>
+        <div class="saas-card mb-6">
+          <div class="flex-between mb-3"><div><h3 style="font-weight: 700;">Profile Completion</h3></div><div style="font-weight: 800; font-size: 1.2rem; color: var(--text-blue);" id="dash-profile-pct">80%</div></div>
+          <div style="width: 100%; height: 10px; background: #e2e8f0; border-radius: 999px; overflow: hidden;" class="mb-4"><div id="dash-profile-bar" style="width: 80%; height: 100%; background: linear-gradient(90deg, #2563eb 0%, #7c3aed 100%);"></div></div>
+          <div id="dash-missing-items" class="flex-align gap-2 flex-wrap text-xs" style="color: var(--text-muted);"></div>
+        </div>
+        <div class="grid-3 gap-4 mb-6">
+          <div class="stat-card"><div><div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700;">CGPA</div><div style="font-size: 1.4rem; font-weight: 800;" id="stat-cgpa">8.80</div></div></div>
+          <div class="stat-card"><div><div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700;">TECHNICAL SKILLS</div><div style="font-size: 1.4rem; font-weight: 800;" id="stat-skills">6</div></div></div>
+          <div class="stat-card"><div><div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700;">PORTFOLIO PROJECTS</div><div style="font-size: 1.4rem; font-weight: 800;" id="stat-projects">2</div></div></div>
+          <div class="stat-card"><div><div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700;">CERTIFICATES</div><div style="font-size: 1.4rem; font-weight: 800;" id="stat-certs">1</div></div></div>
+          <div class="stat-card"><div><div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700;">APPLICATIONS</div><div style="font-size: 1.4rem; font-weight: 800;" id="stat-apps">2</div></div></div>
+          <div class="stat-card"><div><div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700;">SKILL SCORE</div><div style="font-size: 1.4rem; font-weight: 800;" id="stat-score">82 / 100</div></div></div>
+        </div>
+        <div class="saas-card mb-6">
+          <div class="flex-between mb-4"><h3 style="font-weight: 700;">Recommended Jobs</h3><button class="btn-saas btn-outline" onclick="navigateTo('opportunities')">Browse All</button></div>
+          <div id="dash-recommended-jobs" class="grid-3 gap-4"></div>
+        </div>
+      </section>
+
+      <section id="view-profile" class="workspace-view hidden">
+        <h1 style="font-size: 1.6rem; font-weight: 800;" class="mb-6">My Profile</h1>
+        <div class="saas-card mb-6">
+          <form id="profile-form" onsubmit="handleSaveProfile(event)">
+            <div class="grid-3 gap-4 mb-4">
+              <div><label class="mb-1 block text-xs font-bold">Full Name</label><input type="text" id="prof-name" class="saas-input" required /></div>
+              <div><label class="mb-1 block text-xs font-bold">Phone Number</label><input type="text" id="prof-phone" class="saas-input" required /></div>
+              <div><label class="mb-1 block text-xs font-bold">College</label><input type="text" id="prof-college" class="saas-input" required /></div>
+            </div>
+            <button type="submit" class="btn-saas btn-primary">Save Profile</button>
+          </form>
+        </div>
+      </section>
+
+      <section id="view-academics" class="workspace-view hidden"><h1 class="mb-4">Academics</h1><div class="saas-card"><table class="saas-table"><thead><tr><th>Semester</th><th>GPA</th><th>Status</th></tr></thead><tbody id="semester-table-body"></tbody></table></div></section>
+      <section id="view-skills" class="workspace-view hidden"><h1 class="mb-4">Skills Matrix</h1><div class="saas-card"><div id="technical-skills-list" class="flex-col gap-3"></div></div></section>
+      <section id="view-assessments" class="workspace-view hidden"><h1 class="mb-4">Assessments</h1><div class="saas-card mb-4"><h2 id="assess-overall-score">82 / 100</h2></div><div id="assessments-list-container"></div></section>
+      <section id="view-portfolio" class="workspace-view hidden"><h1 class="mb-4">Portfolio</h1><div id="portfolio-tab-content"></div></section>
+      <section id="view-ai-skill-analyzer" class="workspace-view hidden"><h1 class="mb-4">AI Skill Analyzer</h1><div class="saas-card mb-4"><h2 id="ai-match-pct">92% Match</h2></div></section>
+      <section id="view-opportunities" class="workspace-view hidden"><h1 class="mb-4">Opportunities</h1><div id="opportunities-list-container" class="grid-2 gap-4"></div></section>
+      <section id="view-applications" class="workspace-view hidden"><h1 class="mb-4">Applications</h1><div id="applications-list-container"></div></section>
+      <section id="view-notifications" class="workspace-view hidden"><h1 class="mb-4">Notifications</h1><div id="notifications-list-container"></div></section>
+      <section id="view-settings" class="workspace-view hidden"><h1 class="mb-4">Settings</h1></section>
+
+      <!-- COMPANY RECRUITER MODULE VIEWS -->
+      <section id="view-company-dashboard" class="workspace-view hidden">
+        <div class="flex-between mb-6">
+          <div><h1 style="font-size: 1.6rem; font-weight: 800;" id="comp-header">TechCorp ATS Pipeline</h1><p style="color: var(--text-muted);">8-Stage Candidate Management with 100% Multi-Tenant Data Isolation.</p></div>
+          <button class="btn-saas btn-primary" onclick="navigateTo('company-jobs')"><i class="fa-solid fa-plus"></i> Post Requirement</button>
+        </div>
+
+        <div class="grid-4 gap-4 mb-6">
+          <div class="stat-card"><div><div style="font-size:0.75rem; font-weight:700; color:var(--text-muted);">COMPANY ID</div><div style="font-size:1.3rem; font-weight:800; color:var(--text-blue);" id="comp-id-badge">CMP-10001</div></div></div>
+          <div class="stat-card"><div><div style="font-size:0.75rem; font-weight:700; color:var(--text-muted);">ACTIVE JOBS</div><div style="font-size:1.4rem; font-weight:800;" id="comp-total-jobs">2</div></div></div>
+          <div class="stat-card"><div><div style="font-size:0.75rem; font-weight:700; color:var(--text-muted);">TOTAL APPLICANTS</div><div style="font-size:1.4rem; font-weight:800;" id="comp-total-apps">1</div></div></div>
+          <div class="stat-card"><div><div style="font-size:0.75rem; font-weight:700; color:var(--text-muted);">SHORTLISTED</div><div style="font-size:1.4rem; font-weight:800;" id="comp-shortlisted">1</div></div></div>
+        </div>
+
+        <div class="saas-card mb-6">
+          <h3 style="font-weight:700;" class="mb-4">8-Stage Isolated ATS Candidate Pipeline</h3>
+          <div class="pipeline-container-flex" id="ats-kanban-board"></div>
+        </div>
+      </section>
+
+      <section id="view-company-jobs" class="workspace-view hidden">
+        <h1 style="font-size: 1.6rem; font-weight: 800;" class="mb-4">Post New Job Requirement</h1>
+        <div class="saas-card">
+          <form onsubmit="handlePostJobSubmit(event)">
+            <div class="grid-2 gap-4 mb-4">
+              <div><label class="block text-xs font-bold mb-1">Job Title *</label><input type="text" id="job-post-title" class="saas-input" placeholder="e.g. Senior Software Engineer" required /></div>
+              <div><label class="block text-xs font-bold mb-1">Location *</label><input type="text" id="job-post-loc" class="saas-input" placeholder="Bengaluru / Hybrid" required /></div>
+              <div><label class="block text-xs font-bold mb-1">Salary / Stipend</label><input type="text" id="job-post-salary" class="saas-input" placeholder="₹ 12,00,000 P.A." required /></div>
+              <div><label class="block text-xs font-bold mb-1">Minimum CGPA Cutoff</label><input type="number" step="0.1" id="job-post-cgpa" class="saas-input" value="7.5" required /></div>
+              <div><label class="block text-xs font-bold mb-1">Required Skills (Comma Separated)</label><input type="text" id="job-post-skills" class="saas-input" placeholder="Java, Python, SQL" required /></div>
+              <div><label class="block text-xs font-bold mb-1">Application Deadline</label><input type="date" id="job-post-deadline" class="saas-input" required /></div>
+            </div>
+            <button type="submit" class="btn-saas btn-primary"><i class="fa-solid fa-paper-plane"></i> Publish Job Requirement</button>
+          </form>
+        </div>
+      </section>
+
+      <section id="view-talent-finder" class="workspace-view hidden">
+        <h1 style="font-size: 1.6rem; font-weight: 800;" class="mb-4">Talent Finder & Candidate Eligibility Engine</h1>
+        <div class="saas-card mb-4"><div id="talent-candidates-list" class="grid-2 gap-4"></div></div>
+      </section>
+
+      <!-- UNIVERSITY / COLLEGE ADMIN MODULE VIEWS -->
+      <section id="view-college-dashboard" class="workspace-view hidden">
+        <h1 style="font-size: 1.6rem; font-weight: 800;" class="mb-6">University Placement & Academic Analytics</h1>
+        <div class="grid-3 gap-4 mb-6">
+          <div class="stat-card"><div><div style="font-size:0.75rem; font-weight:700; color:var(--text-muted);">TOTAL STUDENTS</div><div style="font-size:1.4rem; font-weight:800;" id="col-total-students">450</div></div></div>
+          <div class="stat-card"><div><div style="font-size:0.75rem; font-weight:700; color:var(--text-muted);">PLACED STUDENTS</div><div style="font-size:1.4rem; font-weight:800;" id="col-placed-students">382</div></div></div>
+          <div class="stat-card"><div><div style="font-size:0.75rem; font-weight:700; color:var(--text-muted);">PLACEMENT RATE</div><div style="font-size:1.4rem; font-weight:800; color:var(--text-emerald);" id="col-placement-rate">84.8%</div></div></div>
+        </div>
+        <div class="saas-card mb-6">
+          <h3 style="font-weight:700;" class="mb-4">Department Placement Performance</h3>
+          <table class="saas-table">
+            <thead><tr><th>Department</th><th>Total Enrolled</th><th>Placed</th><th>Placement %</th></tr></thead>
+            <tbody id="college-dept-table"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="view-college-students" class="workspace-view hidden">
+        <h1 style="font-size: 1.6rem; font-weight: 800;" class="mb-4">Student Directory</h1>
+        <div class="saas-card"><div id="college-students-list" class="grid-2 gap-4"></div></div>
+      </section>
+
+      <section id="view-campus-drives" class="workspace-view hidden">
+        <h1 style="font-size: 1.6rem; font-weight: 800;" class="mb-4">Campus Placement Drives</h1>
+        <div class="saas-card"><p style="color:var(--text-muted);">Campus recruitment drives and visiting companies schedule.</p></div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- ENFORCED STUDENT AUTHENTICATION MODAL -->
+  <div id="student-auth-modal" class="modal-backdrop hidden">
+    <div class="modal-content" style="max-width: 460px; padding: 2rem;">
+      <div class="flex-between mb-4">
+        <h3 id="student-auth-title" style="font-weight: 800;"><i class="fa-solid fa-graduation-cap text-blue"></i> Student Sign In</h3>
+        <button class="btn-saas btn-outline" style="padding: 0.3rem 0.6rem;" onclick="closeModal('student-auth-modal')"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+
+      <!-- STUDENT LOGIN FORM -->
+      <form id="student-login-form" onsubmit="handleStudentLoginSubmit(event)">
+        <div class="mb-3">
+          <label class="block text-xs font-bold mb-1">Email / Student ID *</label>
+          <input type="text" id="stu-login-id" class="saas-input" value="arjun@skillbridge.ai" placeholder="arjun@skillbridge.ai or STU-2026-101" required />
+        </div>
+        <div class="mb-4">
+          <label class="block text-xs font-bold mb-1">Password *</label>
+          <input type="password" id="stu-login-pass" class="saas-input" value="Student@123" required />
+        </div>
+        <button type="submit" class="btn-saas btn-primary w-full mb-3" style="padding:0.75rem;">Sign In to Student Portal</button>
+        <p class="text-xs text-center" style="color:var(--text-muted);">Don't have an account? <a href="#" onclick="switchStudentAuthTab('register')" style="color:var(--text-blue); font-weight:700;">Register Student Account</a></p>
+      </form>
+
+      <!-- STUDENT REGISTER FORM -->
+      <form id="student-register-form" class="hidden" onsubmit="handleStudentRegisterSubmit(event)">
+        <div class="mb-2">
+          <label class="block text-xs font-bold mb-1">Full Name *</label>
+          <input type="text" id="stu-reg-name" class="saas-input" placeholder="e.g. Arjun Sharma" required />
+        </div>
+        <div class="mb-2">
+          <label class="block text-xs font-bold mb-1">Email Address *</label>
+          <input type="email" id="stu-reg-email" class="saas-input" placeholder="arjun@skillbridge.ai" required />
+        </div>
+        <div class="mb-2">
+          <label class="block text-xs font-bold mb-1">Mobile Number</label>
+          <input type="text" id="stu-reg-mobile" class="saas-input" placeholder="+91 9876543210" />
+        </div>
+        <div class="mb-2">
+          <label class="block text-xs font-bold mb-1">Student ID *</label>
+          <input type="text" id="stu-reg-id" class="saas-input" placeholder="STU-2026-101" required />
+        </div>
+        <div class="mb-3">
+          <label class="block text-xs font-bold mb-1">Password *</label>
+          <input type="password" id="stu-reg-pass" class="saas-input" placeholder="••••••••" required />
+        </div>
+        <button type="submit" class="btn-saas btn-primary w-full mb-3" style="padding:0.75rem;">Create Student Account</button>
+        <p class="text-xs text-center" style="color:var(--text-muted);">Already registered? <a href="#" onclick="switchStudentAuthTab('login')" style="color:var(--text-blue); font-weight:700;">Sign In</a></p>
+      </form>
+    </div>
+  </div>
+
+  <!-- ENFORCED COMPANY AUTHENTICATION MODAL -->
+  <div id="company-auth-modal" class="modal-backdrop hidden">
+    <div class="modal-content" style="max-width: 460px; padding: 2rem;">
+      <div class="flex-between mb-4">
+        <h3 id="comp-auth-title" style="font-weight: 800;"><i class="fa-solid fa-building text-blue"></i> Company Recruiter Login</h3>
+        <button class="btn-saas btn-outline" style="padding: 0.3rem 0.6rem;" onclick="closeModal('company-auth-modal')"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+
+      <!-- COMPANY LOGIN FORM -->
+      <form id="company-login-form" onsubmit="handleCompanyLoginSubmit(event)">
+        <div class="mb-3">
+          <label class="block text-xs font-bold mb-1">Company Name * (REQUIRED)</label>
+          <input type="text" id="comp-login-name" class="saas-input" value="TechCorp Solutions" placeholder="e.g. TechCorp Solutions or CMP-10001" required />
+        </div>
+        <div class="mb-3">
+          <label class="block text-xs font-bold mb-1">Recruiter Username / Email *</label>
+          <input type="text" id="comp-login-user" class="saas-input" value="recruiter@techcorp.com" required />
+        </div>
+        <div class="mb-4">
+          <label class="block text-xs font-bold mb-1">Password *</label>
+          <input type="password" id="comp-login-pass" class="saas-input" value="Company@123" required />
+        </div>
+        <button type="submit" class="btn-saas btn-primary w-full mb-3" style="padding:0.75rem;">Access Recruiter ATS Workspace</button>
+        <p class="text-xs text-center" style="color:var(--text-muted);">Don't have a corporate account? <a href="#" onclick="switchCompanyAuthTab('register')" style="color:var(--text-blue); font-weight:700;">Register Company Here</a></p>
+      </form>
+
+      <!-- COMPANY REGISTER FORM -->
+      <form id="company-register-form" class="hidden" onsubmit="handleCompanyRegisterSubmit(event)">
+        <div class="mb-2">
+          <label class="block text-xs font-bold mb-1">Company Name *</label>
+          <input type="text" id="comp-reg-name" class="saas-input" placeholder="e.g. InnovateTech Solutions" required />
+        </div>
+        <div class="mb-2">
+          <label class="block text-xs font-bold mb-1">Manager / Recruiter Name *</label>
+          <input type="text" id="comp-reg-mgr" class="saas-input" placeholder="e.g. Vikram Malhotra" required />
+        </div>
+        <div class="mb-2">
+          <label class="block text-xs font-bold mb-1">Company Recruiter Email *</label>
+          <input type="email" id="comp-reg-email" class="saas-input" placeholder="recruiter@innovatetech.com" required />
+        </div>
+        <div class="mb-3">
+          <label class="block text-xs font-bold mb-1">Password *</label>
+          <input type="password" id="comp-reg-pass" class="saas-input" placeholder="••••••••" required />
+        </div>
+        <button type="submit" class="btn-saas btn-primary w-full mb-3" style="padding:0.75rem;">Register & Auto-Generate Company ID</button>
+        <p class="text-xs text-center" style="color:var(--text-muted);">Already registered? <a href="#" onclick="switchCompanyAuthTab('login')" style="color:var(--text-blue); font-weight:700;">Sign In</a></p>
+      </form>
+    </div>
+  </div>
+
+  <!-- ENFORCED COLLEGE ADMIN AUTHENTICATION MODAL -->
+  <div id="college-auth-modal" class="modal-backdrop hidden">
+    <div class="modal-content" style="max-width: 460px; padding: 2rem;">
+      <div class="flex-between mb-4">
+        <h3 id="college-auth-title" style="font-weight: 800;"><i class="fa-solid fa-university text-purple"></i> University Admin Login</h3>
+        <button class="btn-saas btn-outline" style="padding: 0.3rem 0.6rem;" onclick="closeModal('college-auth-modal')"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+
+      <!-- COLLEGE LOGIN FORM -->
+      <form id="college-login-form" onsubmit="handleCollegeLoginSubmit(event)">
+        <div class="mb-3">
+          <label class="block text-xs font-bold mb-1">University / College Name *</label>
+          <input type="text" id="col-login-name" class="saas-input" value="Anna University" placeholder="e.g. Anna University" required />
+        </div>
+        <div class="mb-3">
+          <label class="block text-xs font-bold mb-1">Admin Username / Email *</label>
+          <input type="text" id="col-login-user" class="saas-input" value="anna_univ_admin" required />
+        </div>
+        <div class="mb-4">
+          <label class="block text-xs font-bold mb-1">Password *</label>
+          <input type="password" id="col-login-pass" class="saas-input" value="College@123" required />
+        </div>
+        <button type="submit" class="btn-saas btn-primary w-full mb-3" style="padding:0.75rem;">Access Placement Analytics</button>
+        <p class="text-xs text-center" style="color:var(--text-muted);">Don't have an admin account? <a href="#" onclick="switchCollegeAuthTab('register')" style="color:var(--text-purple); font-weight:700;">Register University Admin</a></p>
+      </form>
+
+      <!-- COLLEGE REGISTER FORM -->
+      <form id="college-register-form" class="hidden" onsubmit="handleCollegeRegisterSubmit(event)">
+        <div class="mb-2">
+          <label class="block text-xs font-bold mb-1">University / College Name *</label>
+          <input type="text" id="col-reg-name" class="saas-input" placeholder="e.g. IIT Madras" required />
+        </div>
+        <div class="mb-2">
+          <label class="block text-xs font-bold mb-1">Admin Officer Name *</label>
+          <input type="text" id="col-reg-admin" class="saas-input" placeholder="e.g. Prof. R. Ramanathan" required />
+        </div>
+        <div class="mb-2">
+          <label class="block text-xs font-bold mb-1">College Email *</label>
+          <input type="email" id="col-reg-email" class="saas-input" placeholder="placement@iitm.ac.in" required />
+        </div>
+        <div class="mb-3">
+          <label class="block text-xs font-bold mb-1">Password *</label>
+          <input type="password" id="col-reg-pass" class="saas-input" placeholder="••••••••" required />
+        </div>
+        <button type="submit" class="btn-saas btn-primary w-full mb-3" style="padding:0.75rem;">Register University Admin</button>
+        <p class="text-xs text-center" style="color:var(--text-muted);">Already registered? <a href="#" onclick="switchCollegeAuthTab('login')" style="color:var(--text-purple); font-weight:700;">Sign In</a></p>
+      </form>
+    </div>
+  </div>
+
+  <!-- FIXED FLOATING STICKY WATERMARK BADGE FOR ALL PAGES -->
+  <div class="watermark-sticky-badge">
+    <i class="fa-solid fa-code text-blue"></i> Created by @Eswara Karuppasamy K
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
