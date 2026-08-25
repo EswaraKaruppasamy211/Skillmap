@@ -5,24 +5,40 @@ const crypto = require('crypto');
 const { URL } = require('url');
 
 // Environment Variables Helper
-const envPath = path.join(__dirname, '..', '.env');
-if (fs.existsSync(envPath)) {
-  try {
-    const envLines = fs.readFileSync(envPath, 'utf8').split('\n');
-    envLines.forEach(line => {
-      const trimmed = line.trim();
-      if (trimmed && !trimmed.startsWith('#') && trimmed.includes('=')) {
-        const [k, v] = trimmed.split('=');
-        process.env[k.trim()] = v.trim();
-      }
-    });
-  } catch (e) {}
+const envPaths = [
+  path.join(__dirname, '.env'),
+  path.join(__dirname, '..', '.env')
+];
+for (const envPath of envPaths) {
+  if (fs.existsSync(envPath)) {
+    try {
+      const envLines = fs.readFileSync(envPath, 'utf8').split('\n');
+      envLines.forEach(line => {
+        const trimmed = line.trim();
+        if (trimmed && !trimmed.startsWith('#') && trimmed.includes('=')) {
+          const [k, ...rest] = trimmed.split('=');
+          const v = rest.join('=');
+          if (!Object.prototype.hasOwnProperty.call(process.env, k.trim())) {
+            process.env[k.trim()] = v.trim();
+          }
+        }
+      });
+    } catch (e) {}
+  }
 }
 
-const port = Number(process.env.PORT) || 3000;
+const PORT = Number(process.env.PORT) || 3000;
 const repoRoot = path.resolve(__dirname, '..');
-const uploadsDir = path.join(repoRoot, 'uploads');
+const uploadsDir = process.env.FILE_STORAGE_PATH ? path.resolve(process.env.FILE_STORAGE_PATH) : path.join(__dirname, 'uploads');
 if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
+const frontendOrigin = process.env.FRONTEND_URL || 'http://localhost:5173';
+const allowedOrigins = new Set([
+  frontendOrigin,
+  'http://localhost:3000',
+  'http://localhost:5173',
+  'http://127.0.0.1:3000',
+  'http://127.0.0.1:5173'
+]);
 
 let aiEngine = null;
 try { aiEngine = require('./ai_engine'); } catch (e) { console.error('Failed to load aiEngine:', e); }
@@ -140,7 +156,10 @@ function verifyPassword(password, salt, hash) {
   } catch (e) { return false; }
 }
 
-const JWT_SECRET = process.env.JWT_SECRET || 'skillbridge-enterprise-secret-key-2026';
+if (!process.env.JWT_SECRET) {
+  console.warn('JWT_SECRET is not set. Set it in your environment before production deployment.');
+}
+const JWT_SECRET = process.env.JWT_SECRET;
 
 function generateToken(payload) {
   const header = Buffer.from(JSON.stringify({ alg: 'HS256', typ: 'JWT' })).toString('base64url');
@@ -381,21 +400,26 @@ const server = http.createServer(async (req, res) => {
   const parsedUrl = new URL(req.url, `http://${req.headers.host || 'localhost:3000'}`);
   const pathname = parsedUrl.pathname;
 
+  const requestOrigin = req.headers.origin || frontendOrigin;
+  const effectiveOrigin = allowedOrigins.has(requestOrigin) ? requestOrigin : frontendOrigin;
+
   const sendJSON = (statusCode, data) => {
     res.writeHead(statusCode, {
       'Content-Type': 'application/json',
-      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Origin': effectiveOrigin,
       'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-      'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS'
+      'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+      'Vary': 'Origin'
     });
     res.end(JSON.stringify(data));
   };
 
   if (req.method === 'OPTIONS') {
     res.writeHead(204, {
-      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Origin': effectiveOrigin,
       'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-      'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS'
+      'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+      'Vary': 'Origin'
     });
     return res.end();
   }
@@ -802,8 +826,8 @@ const server = http.createServer(async (req, res) => {
   }
 });
 
-server.listen(port, () => {
+server.listen(PORT, '0.0.0.0', () => {
   console.log(`=======================================================`);
-  console.log(` SkillBridge Multi-Company Platform Running on Port ${port}`);
+  console.log(` SkillBridge Multi-Company Platform Running on Port ${PORT}`);
   console.log(`=======================================================`);
 });
