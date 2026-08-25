@@ -1,0 +1,8 @@
+{
+  "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "https://skillmap-89by.onrender.com/api/:path*"
+    }
+  ]
+}
