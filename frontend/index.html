@@ -61,21 +61,29 @@
     </div>
   </header>
 
-  <!-- LANDING HERO -->
-  <div id="guest-landing" class="saas-card mb-6" style="margin: 2rem auto; max-width: 900px; text-align: center; padding: 3rem 2rem;">
-    <div class="logo-icon-saas" style="width: 64px; height: 64px; font-size: 1.8rem; margin: 0 auto 1.5rem auto;">
-      <i class="fa-solid fa-wand-magic-sparkles"></i>
+  <!-- LANDING HERO WITH INTERAPP BACKGROUND DESIGN -->
+  <div id="guest-landing" class="saas-card mb-6 relative overflow-hidden" style="margin: 2rem auto; max-width: 900px; text-align: center; padding: 3.5rem 2rem;">
+    <div class="hero-video-wrapper">
+      <div class="hero-video-overlay"></div>
+      <video class="hero-video-element" autoplay loop muted playsinline poster="https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=1920&q=80">
+        <source src="https://assets.mixkit.co/videos/preview/mixkit-circuit-board-digital-technology-animation-40973-large.mp4" type="video/mp4">
+      </video>
     </div>
-    <h1 style="font-size: 2.2rem; font-weight: 800; margin-bottom: 0.75rem; color: var(--text-primary);">
-      Academia–Industry Collaboration Platform
-    </h1>
-    <p style="color: var(--text-secondary); max-width: 650px; margin: 0 auto 2rem auto; font-size: 1rem;">
-      Unified 3-Portal ecosystem connecting Students, Corporate Recruiters, and University Placement Admins.
-    </p>
-    <div class="flex-align gap-3" style="justify-content: center;">
-      <button class="btn-saas btn-primary" style="padding: 0.8rem 1.5rem;" onclick="openStudentAuthModal('login')">Student Portal</button>
-      <button class="btn-saas btn-outline" style="padding: 0.8rem 1.5rem;" onclick="switchPortalRole('company')">Company Recruiter</button>
-      <button class="btn-saas btn-outline" style="padding: 0.8rem 1.5rem;" onclick="switchPortalRole('college')">University Admin</button>
+    <div class="relative" style="z-index: 10;">
+      <div class="logo-icon-saas" style="width: 64px; height: 64px; font-size: 1.8rem; margin: 0 auto 1.5rem auto;">
+        <i class="fa-solid fa-wand-magic-sparkles"></i>
+      </div>
+      <h1 style="font-size: 2.2rem; font-weight: 800; margin-bottom: 0.75rem; color: var(--text-primary);">
+        Academia–Industry Collaboration Platform
+      </h1>
+      <p style="color: var(--text-secondary); max-width: 650px; margin: 0 auto 2rem auto; font-size: 1rem;">
+        Unified 3-Portal ecosystem connecting Students, Corporate Recruiters, and University Placement Admins.
+      </p>
+      <div class="flex-align gap-3" style="justify-content: center;">
+        <button class="btn-saas btn-primary" style="padding: 0.8rem 1.5rem;" onclick="openStudentAuthModal('login')">Student Portal</button>
+        <button class="btn-saas btn-outline" style="padding: 0.8rem 1.5rem;" onclick="switchPortalRole('company')">Company Recruiter</button>
+        <button class="btn-saas btn-outline" style="padding: 0.8rem 1.5rem;" onclick="switchPortalRole('college')">University Admin</button>
+      </div>
     </div>
   </div>
 
