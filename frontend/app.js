@@ -1,6 +1,6 @@
 // SkillBridge AI - Multi-Company Recruitment Platform Client Engine
 
-const API_BASE = '/api';
+const API_BASE = 'https://skillmap-89by.onrender.com/api';
 
 let currentUser = null;
 let currentProfile = null;
