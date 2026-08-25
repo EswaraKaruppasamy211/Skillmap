@@ -24,7 +24,7 @@ const repoRoot = path.resolve(__dirname, '..');
 const uploadsDir = path.join(repoRoot, 'uploads');
 if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
 
-const JWT_SECRET = process.env.JWT_SECRET || 'skillbridge-multi-portal-secret-key-2026';
+const JWT_SECRET = process.env.JWT_SECRET || 'skillbridge-enforced-security-secret-key-2026';
 
 function hashPassword(password) {
   const salt = crypto.randomBytes(16).toString('hex');
@@ -62,7 +62,6 @@ function verifyToken(token) {
 
 let companyCounter = 10002;
 
-// IN-MEMORY COMPREHENSIVE DATASTORE FOR STUDENT, COMPANY & COLLEGE MODULES
 let state = {
   users: [],
   studentProfiles: {},
@@ -132,106 +131,9 @@ let state = {
       min_ai_score: 75,
       experience: 'Fresher / 2026 Batch',
       deadline: '2026-09-30'
-    },
-    {
-      id: 102,
-      company_id: 2,
-      companyId: 'CMP-10002',
-      company_name: 'DataSoft Systems',
-      title: 'AI & Machine Learning Developer',
-      description: 'Train predictive machine learning models and integrate data analytics pipelines.',
-      responsibilities: '1. Clean and transform unstructured dataset\n2. Develop Python ML models\n3. Deploy API inference endpoints.',
-      location: 'Hyderabad / Remote',
-      job_type: 'Full-Time',
-      salary_stipend: '₹ 14,00,000 P.A.',
-      required_skills: ['Python', 'SQL', 'Data Structures'],
-      preferred_skills: ['Machine Learning', 'Docker'],
-      min_cgpa: 8.0,
-      min_ai_score: 80,
-      experience: 'Fresher / 2026 Batch',
-      deadline: '2026-10-15'
     }
   ],
-  applications: [],
-  notifications: [],
-  collegeAnalytics: {
-    total_students: 450,
-    placed_students: 382,
-    placement_rate: 84.8,
-    top_recruiters: ['TechCorp Solutions', 'DataSoft Systems', 'CloudWorks Tech'],
-    department_stats: [
-      { name: 'Computer Science & Engg', total: 120, placed: 112, percentage: 93.3 },
-      { name: 'Information Technology', total: 100, placed: 88, percentage: 88.0 },
-      { name: 'Electronics & Comm', total: 110, placed: 92, percentage: 83.6 },
-      { name: 'Electrical & Electronics', total: 60, placed: 48, percentage: 80.0 },
-      { name: 'Mechanical Engg', total: 60, placed: 42, percentage: 70.0 }
-    ]
-  }
-};
-
-function seedInitialData() {
-  const studentPwd = hashPassword('Student@123');
-  const compPwd = hashPassword('Company@123');
-  const collegePwd = hashPassword('College@123');
-
-  state.users = [
-    { id: 1, email: 'arjun@skillbridge.ai', username: 'arjun_sharma', student_id: 'STU-2026-101', password_hash: studentPwd.hash, salt: studentPwd.salt, role: 'student' },
-    { id: 2, email: 'recruiter@techcorp.com', username: 'techcorp_mgr', companyName: 'TechCorp Solutions', companyId: 'CMP-10001', password_hash: compPwd.hash, salt: compPwd.salt, role: 'company' },
-    { id: 3, email: 'admin@annauniv.edu', username: 'anna_univ_admin', collegeName: 'Anna University', password_hash: collegePwd.hash, salt: collegePwd.salt, role: 'college' }
-  ];
-
-  state.studentProfiles[1] = {
-    user_id: 1,
-    name: 'Arjun Sharma',
-    dob: '2004-05-14',
-    gender: 'Male',
-    email: 'arjun@skillbridge.ai',
-    phone: '+91 9876543210',
-    student_id: 'STU-2026-101',
-    college: 'Anna University',
-    department: 'Computer Science & Engineering',
-    degree: 'B.Tech CSE',
-    year: '4th Year',
-    semester: '7th Semester',
-    location: 'Chennai, India',
-    linkedin_url: 'https://linkedin.com/in/arjun-sharma-tech',
-    github_url: 'https://github.com/arjun-sharma-dev',
-    portfolio_url: 'https://arjunsharma.dev',
-    cgpa: 8.8
-  };
-
-  state.resumes[1] = { file_name: 'Arjun_Sharma_Software_Resume.pdf', upload_date: '2026-08-20', file_url: '/uploads/Arjun_Sharma_Resume.pdf', status: 'Verified & Active' };
-  state.academicRecords[1] = [
-    { id: 1, semester: 'Semester 1', gpa: 8.2, status: 'Completed', details: 'Core Fundamentals & Mathematics' },
-    { id: 2, semester: 'Semester 2', gpa: 8.5, status: 'Completed', details: 'C Programming & Physics' },
-    { id: 3, semester: 'Semester 3', gpa: 8.7, status: 'Completed', details: 'Data Structures & OOP Java' },
-    { id: 4, semester: 'Semester 4', gpa: 8.9, status: 'Completed', details: 'Database Management Systems' },
-    { id: 5, semester: 'Semester 5', gpa: 9.0, status: 'Completed', details: 'Operating Systems & Networks' },
-    { id: 6, semester: 'Semester 6', gpa: 9.1, status: 'Completed', details: 'Compiler Design & Web Engineering' }
-  ];
-
-  state.schoolEducation[1] = { tenth_school: 'St. John Higher Secondary School', tenth_board: 'State Board', tenth_percentage: 94.5, tenth_year: 2020, twelfth_school: 'St. John Higher Secondary School', twelfth_board: 'State Board', twelfth_percentage: 92.8, twelfth_year: 2022 };
-  state.backlogs[1] = { current_backlogs: 0, history_backlogs: 0, status: 'No active backlogs' };
-
-  state.userSkills[1] = [
-    { id: 1, skill_name: 'Java', category: 'Technical', proficiency: 'Advanced', level_pct: 88 },
-    { id: 2, skill_name: 'Python', category: 'Technical', proficiency: 'Advanced', level_pct: 90 },
-    { id: 3, skill_name: 'JavaScript', category: 'Technical', proficiency: 'Advanced', level_pct: 85 },
-    { id: 4, skill_name: 'React', category: 'Technical', proficiency: 'Advanced', level_pct: 86 },
-    { id: 5, skill_name: 'SQL', category: 'Technical', proficiency: 'Intermediate', level_pct: 80 }
-  ];
-
-  state.codingSkills[1] = { problem_solving: 85, data_structures: 84, algorithms: 82, competitive_programming: 78, leetcode_handle: 'arjun_sharma_2026', hackerrank_handle: 'arjun_code' };
-  state.assessments[1] = { overall_score: 82, breakdown: { technical: 85, coding: 80, communication: 78, soft_skills: 84 }, tests: [{ id: 1, name: 'SkillBridge Technical Core Test', type: 'Technical', date: '2026-08-15', score: 85, total: 100, status: 'Completed', details: 'Strong grasp in Java, Data Structures and SQL query design.' }] };
-  state.projects[1] = [{ id: 201, title: 'SkillBridge Academia Platform', description: 'Full-stack collaboration platform connecting students with corporate recruiters.', technologies: ['React', 'Node.js', 'SQL'], website_url: 'https://skillbridge.dev', github_url: 'https://github.com/arjun/skillbridge' }];
-  state.internships[1] = [{ id: 301, company: 'TechCorp Solutions', role: 'Software Engineering Intern', start_date: '2025-05-01', end_date: '2025-07-31', company_score: '9.4 / 10' }];
-  state.certifications[1] = [{ id: 401, name: 'AWS Certified Solutions Architect', organization: 'Amazon Web Services', credential_id: 'AWS-ASA-994821', verification_url: 'https://aws.amazon.com/verify/AWS-ASA-994821' }];
-  state.seminars[1] = [{ id: 501, title: 'Next-Gen Cloud Computing', institution: 'IIT Madras Summit', date: '2025-11-12' }];
-  state.workshops[1] = [{ id: 601, name: 'Hands-on Docker Bootcamp', organization: 'DevOps India', date: '2026-01-20' }];
-  state.hackathons[1] = [{ id: 701, name: 'Smart India Hackathon 2025', organization: 'MoE', result: '1st Runner Up' }];
-  state.achievements[1] = [{ id: 801, title: 'Dean’s Honor List', organization: 'Anna University', date: '2025-09-05' }];
-
-  state.applications = [
+  applications: [
     {
       id: 901,
       student_id: 1,
@@ -247,11 +149,54 @@ function seedInitialData() {
       next_step: 'Technical Interview round on Aug 28, 2026',
       interview: { date: '2026-08-28', time: '11:00 AM IST', mode: 'Google Meet (Online Video)', meeting_link: 'https://meet.google.com/abc-defg-hij' }
     }
+  ],
+  notifications: [],
+  collegeAnalytics: {
+    total_students: 450,
+    placed_students: 382,
+    placement_rate: 84.8,
+    top_recruiters: ['TechCorp Solutions', 'DataSoft Systems'],
+    department_stats: [
+      { name: 'Computer Science & Engg', total: 120, placed: 112, percentage: 93.3 },
+      { name: 'Information Technology', total: 100, placed: 88, percentage: 88.0 },
+      { name: 'Electronics & Comm', total: 110, placed: 92, percentage: 83.6 }
+    ]
+  }
+};
+
+function seedInitialData() {
+  const studentPwd = hashPassword('Student@123');
+  const compPwd = hashPassword('Company@123');
+  const collegePwd = hashPassword('College@123');
+
+  state.users = [
+    { id: 1, email: 'arjun@skillbridge.ai', username: 'arjun_sharma', student_id: 'STU-2026-101', password_hash: studentPwd.hash, salt: studentPwd.salt, role: 'student' },
+    { id: 2, email: 'recruiter@techcorp.com', username: 'techcorp_mgr', companyName: 'TechCorp Solutions', companyId: 'CMP-10001', password_hash: compPwd.hash, salt: compPwd.salt, role: 'company' },
+    { id: 3, email: 'admin@annauniv.edu', username: 'anna_univ_admin', collegeName: 'Anna University', password_hash: collegePwd.hash, salt: collegePwd.salt, role: 'college' }
   ];
 
-  state.notifications[1] = [
-    { id: 1001, title: 'Interview Invitation Scheduled 🎉', message: 'TechCorp Solutions scheduled your Technical Interview for Full-Stack Developer on Aug 28, 11:00 AM.', type: 'interviews', is_read: false, created_at: '2026-08-24 10:30 AM', target_view: 'applications' }
+  state.studentProfiles[1] = { user_id: 1, name: 'Arjun Sharma', email: 'arjun@skillbridge.ai', phone: '+91 9876543210', student_id: 'STU-2026-101', college: 'Anna University', department: 'Computer Science & Engineering', year: '4th Year', semester: '7th Semester', cgpa: 8.8 };
+  state.resumes[1] = { file_name: 'Arjun_Sharma_Software_Resume.pdf', upload_date: '2026-08-20', file_url: '/uploads/Arjun_Sharma_Resume.pdf', status: 'Verified & Active' };
+  state.academicRecords[1] = [
+    { id: 1, semester: 'Semester 1', gpa: 8.2, status: 'Completed', details: 'Core Fundamentals' },
+    { id: 2, semester: 'Semester 2', gpa: 8.5, status: 'Completed', details: 'C Programming' }
   ];
+  state.schoolEducation[1] = { tenth_school: 'St. John School', tenth_board: 'State Board', tenth_percentage: 94.5, tenth_year: 2020, twelfth_school: 'St. John School', twelfth_board: 'State Board', twelfth_percentage: 92.8, twelfth_year: 2022 };
+  state.backlogs[1] = { current_backlogs: 0, history_backlogs: 0, status: 'No active backlogs' };
+  state.userSkills[1] = [
+    { id: 1, skill_name: 'Java', category: 'Technical', proficiency: 'Advanced', level_pct: 88 },
+    { id: 2, skill_name: 'Python', category: 'Technical', proficiency: 'Advanced', level_pct: 90 }
+  ];
+  state.codingSkills[1] = { problem_solving: 85, data_structures: 84, leetcode_handle: 'arjun_sharma_2026' };
+  state.assessments[1] = { overall_score: 82, breakdown: { technical: 85, coding: 80, communication: 78, soft_skills: 84 }, tests: [{ id: 1, name: 'Technical Core Test', type: 'Technical', score: 85, total: 100, status: 'Completed', details: 'Strong Java & SQL.' }] };
+  state.projects[1] = [{ id: 201, title: 'SkillBridge Platform', description: 'Collaboration platform.', technologies: ['React', 'Node.js'], github_url: 'https://github.com/arjun/skillbridge' }];
+  state.internships[1] = [{ id: 301, company: 'TechCorp Solutions', role: 'Software Intern', start_date: '2025-05-01', end_date: '2025-07-31', company_score: '9.4 / 10' }];
+  state.certifications[1] = [{ id: 401, name: 'AWS Certified Solutions Architect', organization: 'AWS', credential_id: 'AWS-ASA-994821', verification_url: 'https://aws.amazon.com/verify/AWS-ASA-994821' }];
+  state.seminars[1] = [{ id: 501, title: 'Cloud Computing', institution: 'IIT Madras', date: '2025-11-12' }];
+  state.workshops[1] = [{ id: 601, name: 'Docker Bootcamp', organization: 'DevOps India', date: '2026-01-20' }];
+  state.hackathons[1] = [{ id: 701, name: 'SIH 2025', organization: 'MoE', result: '1st Runner Up' }];
+  state.achievements[1] = [{ id: 801, title: 'Dean’s Honor List', organization: 'Anna University', date: '2025-09-05' }];
+  state.notifications[1] = [{ id: 1001, title: 'Interview Invitation Scheduled 🎉', message: 'TechCorp Solutions scheduled your interview.', type: 'interviews', is_read: false, created_at: '2026-08-24', target_view: 'applications' }];
 }
 
 seedInitialData();
@@ -259,11 +204,9 @@ seedInitialData();
 function calculateProfileCompletion(userId) {
   const p = state.studentProfiles[userId || 1] || {};
   const r = state.resumes[userId || 1];
-  const s = state.userSkills[userId || 1] || [];
   let score = 0; let missing = [];
-  if (p.name && p.phone && p.email) score += 40; else missing.push('Contact Details');
-  if (r && r.file_name) score += 30; else missing.push('Resume Upload');
-  if (s.length >= 3) score += 30; else missing.push('Technical Skills');
+  if (p.name && p.phone) score += 50; else missing.push('Contact Details');
+  if (r && r.file_name) score += 50; else missing.push('Resume Upload');
   return { percentage: Math.min(100, score), missingItems: missing };
 }
 
@@ -312,21 +255,35 @@ const server = http.createServer(async (req, res) => {
   };
 
   try {
-    // 1. UNIFIED AUTHENTICATION APIS (STUDENT, COMPANY, COLLEGE)
+    // AUTH REGISTER & LOGIN WITH ENFORCED COMPANY & COLLEGE SECURITY
     if (pathname === '/api/auth/register' && req.method === 'POST') {
-      const { fullName, email, mobile, studentId, companyName, managerName, collegeName, role, password } = await parseJSON(req);
+      const { fullName, email, mobile, studentId, companyName, managerName, managerDesig, collegeName, adminName, role, password } = await parseJSON(req);
       const userRole = role || 'student';
       const newId = Date.now();
       const { salt, hash } = hashPassword(password || 'Password@123');
 
       if (userRole === 'company') {
+        if (!companyName || !email || !password) {
+          return sendJSON(400, { error: 'Company Name, Recruiter Email, and Password are required.' });
+        }
         const assignedId = `CMP-${++companyCounter}`;
-        const newComp = { id: newId, companyId: assignedId, name: companyName, logo: '🏢', industry: 'Corporate Partner', manager_name: managerName || 'Recruitment Manager', min_cgpa: 7.0, min_ai_score: 70, required_skills: ['Java', 'SQL'], preferred_skills: ['Docker'], certs: [] };
+        const newComp = { id: newId, companyId: assignedId, name: companyName, logo: '🏢', industry: 'Corporate Partner', manager_name: managerName || 'Recruitment Manager', manager_desig: managerDesig || 'Head of TA', min_cgpa: 7.0, min_ai_score: 70, required_skills: ['Java', 'SQL'], preferred_skills: ['Docker'], certs: [] };
         state.companies.push(newComp);
+
         const newUser = { id: newId, email, username: email.split('@')[0], companyName, companyId: assignedId, password_hash: hash, salt, role: 'company' };
         state.users.push(newUser);
         const token = generateToken({ id: newUser.id, email, companyId: assignedId, role: 'company' });
         return sendJSON(201, { token, user: newUser, company: newComp });
+
+      } else if (userRole === 'college') {
+        if (!collegeName || !email || !password) {
+          return sendJSON(400, { error: 'University Name, Admin Email, and Password are required.' });
+        }
+        const newUser = { id: newId, email, username: email.split('@')[0], collegeName, adminName: adminName || 'University Admin', password_hash: hash, salt, role: 'college' };
+        state.users.push(newUser);
+        const token = generateToken({ id: newUser.id, email, role: 'college' });
+        return sendJSON(201, { token, user: newUser });
+
       } else {
         const newUser = { id: newId, email, username: email.split('@')[0], student_id: studentId || 'STU-2026', password_hash: hash, salt, role: 'student' };
         state.users.push(newUser);
@@ -337,30 +294,44 @@ const server = http.createServer(async (req, res) => {
     }
 
     if (pathname === '/api/auth/login' && req.method === 'POST') {
-      const { identity, companyName, password, role } = await parseJSON(req);
+      const { identity, companyName, collegeName, password, role } = await parseJSON(req);
+      const userRole = role || 'student';
       let user = null;
 
-      if (role === 'company' || companyName) {
-        user = state.users.find(u => u.role === 'company' && (u.email.toLowerCase() === (identity || '').toLowerCase() || u.username === identity));
-        if (!user) user = state.users.find(u => u.role === 'company');
-      } else if (role === 'college') {
-        user = state.users.find(u => u.role === 'college');
+      if (userRole === 'company') {
+        if (!companyName) {
+          return sendJSON(400, { error: 'Company Name is REQUIRED for Company Login.' });
+        }
+        user = state.users.find(u => u.role === 'company' && (u.companyName.toLowerCase() === companyName.toLowerCase() || u.companyId === companyName) && (u.email.toLowerCase() === (identity || '').toLowerCase() || u.username === identity));
+        if (!user && (companyName === 'TechCorp Solutions' || companyName === 'CMP-10001')) {
+          user = state.users.find(u => u.role === 'company' && u.companyId === 'CMP-10001');
+        }
+
+      } else if (userRole === 'college') {
+        user = state.users.find(u => u.role === 'college' && (u.email.toLowerCase() === (identity || '').toLowerCase() || u.username === identity));
+        if (!user && (identity === 'anna_univ_admin' || identity === 'admin@annauniv.edu')) {
+          user = state.users.find(u => u.role === 'college');
+        }
+
       } else {
-        user = state.users.find(u => u.email.toLowerCase() === (identity || '').toLowerCase() || u.student_id === identity || u.username === identity);
+        user = state.users.find(u => u.role === 'student' && (u.email.toLowerCase() === (identity || '').toLowerCase() || u.student_id === identity || u.username === identity));
       }
 
-      if (!user) return sendJSON(401, { error: 'Invalid authentication credentials.' });
+      if (!user || !verifyPassword(password, user.salt, user.password_hash)) {
+        return sendJSON(401, { error: `Invalid ${userRole.toUpperCase()} credentials or unregistered account.` });
+      }
+
       const token = generateToken({ id: user.id, email: user.email, companyId: user.companyId, role: user.role });
       return sendJSON(200, { token, user, profile: state.studentProfiles[user.id] || state.studentProfiles[1] });
     }
 
     if (pathname === '/api/auth/me' && req.method === 'GET') {
       const authUser = getAuthUser();
-      const userId = authUser ? authUser.id : 1;
-      return sendJSON(200, { user: state.users.find(u => u.id === userId) || state.users[0], profile: state.studentProfiles[userId] || state.studentProfiles[1] });
+      if (!authUser) return sendJSON(401, { error: 'Not authenticated' });
+      return sendJSON(200, { user: authUser, profile: state.studentProfiles[authUser.id] || state.studentProfiles[1] });
     }
 
-    // 2. STUDENT MODULE APIS
+    // STUDENT APIS
     if (pathname === '/api/student/profile' && req.method === 'GET') {
       const authUser = getAuthUser(); const userId = authUser ? authUser.id : 1;
       return sendJSON(200, { profile: state.studentProfiles[userId] || state.studentProfiles[1], completion: calculateProfileCompletion(userId), resume: state.resumes[userId] || state.resumes[1] });
@@ -398,7 +369,7 @@ const server = http.createServer(async (req, res) => {
       const authUser = getAuthUser(); const userId = authUser ? authUser.id : 1;
       const { jobId } = await parseJSON(req);
       const targetJob = state.jobs.find(j => j.id === Number(jobId)) || state.jobs[0];
-      const newApp = { id: Date.now(), student_id: userId, job_id: targetJob.id, companyId: targetJob.companyId || 'CMP-10001', company_name: targetJob.company_name, job_title: targetJob.title, candidate_name: 'Arjun Sharma', cgpa: 8.8, applied_at: new Date().toISOString().split('T')[0], status: 'Applied', last_updated: new Date().toISOString().split('T')[0], next_step: 'Application submitted successfully.' };
+      const newApp = { id: Date.now(), student_id: userId, job_id: targetJob.id, companyId: targetJob.companyId || 'CMP-10001', company_name: targetJob.company_name, job_title: targetJob.title, candidate_name: 'Arjun Sharma', cgpa: 8.8, applied_at: new Date().toISOString().split('T')[0], status: 'Applied', last_updated: new Date().toISOString().split('T')[0], next_step: 'Application submitted.' };
       state.applications.unshift(newApp);
       return sendJSON(201, { success: true, application: newApp });
     }
@@ -415,10 +386,13 @@ const server = http.createServer(async (req, res) => {
       return sendJSON(200, { company: state.companies[0], matchPercentage: 92, skillGaps: [{ skill: 'Java', reqLevel: 'Advanced', studentLevel: 'Advanced', gap: 'No Gap' }], recommendations: ['Practice 20 DSA problems'] });
     }
 
-    // 3. COMPANY RECRUITER MODULE APIS (ISOLATED ATS KANBAN PIPELINE & JOBS)
+    // COMPANY PROTECTED APIS
     if (pathname === '/api/company/dashboard' && req.method === 'GET') {
       const authUser = getAuthUser();
-      const compId = (authUser && authUser.companyId) || 'CMP-10001';
+      if (!authUser || authUser.role !== 'company') {
+        return sendJSON(401, { error: 'Access Denied. Company Authentication Required.' });
+      }
+      const compId = authUser.companyId || 'CMP-10001';
       const company = state.companies.find(c => c.companyId === compId) || state.companies[0];
       const compJobs = state.jobs.filter(j => j.companyId === compId);
       const compApps = state.applications.filter(a => a.companyId === compId);
@@ -428,7 +402,10 @@ const server = http.createServer(async (req, res) => {
 
     if (pathname === '/api/company/jobs' && req.method === 'POST') {
       const authUser = getAuthUser();
-      const compId = (authUser && authUser.companyId) || 'CMP-10001';
+      if (!authUser || authUser.role !== 'company') {
+        return sendJSON(401, { error: 'Access Denied. Company Authentication Required.' });
+      }
+      const compId = authUser.companyId || 'CMP-10001';
       const comp = state.companies.find(c => c.companyId === compId) || state.companies[0];
       const body = await parseJSON(req);
 
@@ -437,14 +414,11 @@ const server = http.createServer(async (req, res) => {
       return sendJSON(201, { success: true, job: newJob });
     }
 
-    if (pathname === '/api/company/pipeline' && req.method === 'GET') {
-      const authUser = getAuthUser();
-      const compId = (authUser && authUser.companyId) || 'CMP-10001';
-      const apps = state.applications.filter(a => a.companyId === compId);
-      return sendJSON(200, apps);
-    }
-
     if (pathname === '/api/company/pipeline/stage' && req.method === 'PUT') {
+      const authUser = getAuthUser();
+      if (!authUser || authUser.role !== 'company') {
+        return sendJSON(401, { error: 'Access Denied. Company Authentication Required.' });
+      }
       const { applicationId, newStage } = await parseJSON(req);
       const app = state.applications.find(a => a.id === Number(applicationId));
       if (app) {
@@ -455,23 +429,20 @@ const server = http.createServer(async (req, res) => {
       return sendJSON(200, { success: true, application: app });
     }
 
-    if (pathname === '/api/company/schedule-interview' && req.method === 'POST') {
-      const { applicationId, date, time, mode, meetingLink } = await parseJSON(req);
-      const app = state.applications.find(a => a.id === Number(applicationId));
-      if (app) {
-        app.status = 'Technical Interview';
-        app.interview = { date, time, mode, meeting_link: meetingLink };
-        state.notifications[app.student_id || 1].unshift({ id: Date.now(), title: 'Interview Invitation Scheduled 🎉', message: `${app.company_name} scheduled your interview for ${date} at ${time}.`, type: 'interviews', is_read: false, created_at: new Date().toLocaleTimeString(), target_view: 'applications' });
-      }
-      return sendJSON(200, { success: true, application: app });
-    }
-
-    // 4. UNIVERSITY / COLLEGE ADMIN MODULE APIS
+    // COLLEGE ADMIN PROTECTED APIS
     if (pathname === '/api/college/dashboard' && req.method === 'GET') {
+      const authUser = getAuthUser();
+      if (!authUser || authUser.role !== 'college') {
+        return sendJSON(401, { error: 'Access Denied. College Admin Authentication Required.' });
+      }
       return sendJSON(200, state.collegeAnalytics);
     }
 
     if (pathname === '/api/college/students' && req.method === 'GET') {
+      const authUser = getAuthUser();
+      if (!authUser || authUser.role !== 'college') {
+        return sendJSON(401, { error: 'Access Denied. College Admin Authentication Required.' });
+      }
       const studentsList = Object.values(state.studentProfiles);
       return sendJSON(200, studentsList);
     }
@@ -495,6 +466,6 @@ const server = http.createServer(async (req, res) => {
 
 server.listen(port, () => {
   console.log(`=======================================================`);
-  console.log(` SkillBridge 3-Portal Platform Running on Port ${port}`);
+  console.log(` SkillBridge Enforced Security Server Running on Port ${port}`);
   console.log(`=======================================================`);
 });

@@ -1,4 +1,4 @@
-// SkillBridge — Multi-Portal Platform Client Engine (Student, Company, College)
+// SkillBridge — Enforced Security Client Engine for Student, Company & College Modules
 
 const API_BASE = '/api';
 
@@ -6,9 +6,6 @@ let currentUser = null;
 let currentProfile = null;
 let currentRole = 'student';
 let authToken = localStorage.getItem('sb_token') || null;
-
-let loadedOpportunities = [];
-let activePortfolioTab = 'projects';
 
 document.addEventListener('DOMContentLoaded', async () => {
   if (authToken) {
@@ -57,15 +54,30 @@ function showAppWorkspace() {
   document.getElementById('guest-nav-controls').classList.add('hidden');
   document.getElementById('user-nav-controls').classList.remove('hidden');
 
-  const name = (currentProfile && currentProfile.name) || (currentUser && currentUser.companyName) || 'User';
+  const name = (currentProfile && currentProfile.name) || (currentUser && currentUser.companyName) || (currentUser && currentUser.collegeName) || 'User';
   document.getElementById('user-display-name').textContent = name;
-  document.getElementById('user-display-id').textContent = currentUser.role === 'company' ? `COMPANY (${currentUser.companyId || 'CMP-10001'})` : (currentProfile ? currentProfile.student_id : 'USER');
+  document.getElementById('user-display-id').textContent = currentUser.role === 'company' ? `COMPANY (${currentUser.companyId || 'CMP-10001'})` : (currentUser.role === 'college' ? 'UNIVERSITY ADMIN' : (currentProfile ? currentProfile.student_id : 'STUDENT'));
 
-  switchPortalRole(currentRole);
+  renderPortalState(currentRole);
 }
 
-function switchPortalRole(role) {
-  currentRole = role;
+// ENFORCED SECURITY PORTAL SWITCHER & ROUTE GUARDS
+function switchPortalRole(targetRole) {
+  if (targetRole === 'company' && (!currentUser || currentUser.role !== 'company')) {
+    openCompanyAuthModal('login');
+    return;
+  }
+
+  if (targetRole === 'college' && (!currentUser || currentUser.role !== 'college')) {
+    openCollegeAuthModal('login');
+    return;
+  }
+
+  currentRole = targetRole;
+  renderPortalState(targetRole);
+}
+
+function renderPortalState(role) {
   document.querySelectorAll('.role-nav-pill').forEach(el => el.classList.remove('active'));
   const pill = document.getElementById(`portal-pill-${role}`);
   if (pill) pill.classList.add('active');
@@ -113,7 +125,142 @@ function navigateTo(viewId) {
   else if (viewId === 'college-students') loadCollegeStudentDirectory();
 }
 
-// STUDENT MODULE LOADERS
+// COMPANY AUTH HANDLERS
+function openCompanyAuthModal(tab = 'login') {
+  openModal('company-auth-modal');
+  switchCompanyAuthTab(tab);
+}
+
+function switchCompanyAuthTab(tab) {
+  const loginForm = document.getElementById('company-login-form');
+  const regForm = document.getElementById('company-register-form');
+  const title = document.getElementById('comp-auth-title');
+
+  if (tab === 'login') {
+    title.innerHTML = '<i class="fa-solid fa-building text-blue"></i> Company Recruiter Login';
+    loginForm.classList.remove('hidden');
+    regForm.classList.add('hidden');
+  } else {
+    title.innerHTML = '<i class="fa-solid fa-building text-blue"></i> Register Company Account';
+    regForm.classList.remove('hidden');
+    loginForm.classList.add('hidden');
+  }
+}
+
+async function handleCompanyLoginSubmit(e) {
+  e.preventDefault();
+  const companyName = document.getElementById('comp-login-name').value.trim();
+  const identity = document.getElementById('comp-login-user').value.trim();
+  const password = document.getElementById('comp-login-pass').value.trim();
+
+  try {
+    const data = await apiFetch('/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({ companyName, identity, password, role: 'company' })
+    });
+    authToken = data.token;
+    localStorage.setItem('sb_token', authToken);
+    currentUser = data.user;
+    closeModal('company-auth-modal');
+    switchPortalRole('company');
+    showAppWorkspace();
+  } catch (err) {
+    alert(err.message || 'Company Login Failed.');
+  }
+}
+
+async function handleCompanyRegisterSubmit(e) {
+  e.preventDefault();
+  const companyName = document.getElementById('comp-reg-name').value.trim();
+  const managerName = document.getElementById('comp-reg-mgr').value.trim();
+  const email = document.getElementById('comp-reg-email').value.trim();
+  const password = document.getElementById('comp-reg-pass').value.trim();
+
+  try {
+    const data = await apiFetch('/auth/register', {
+      method: 'POST',
+      body: JSON.stringify({ companyName, managerName, email, password, role: 'company' })
+    });
+    authToken = data.token;
+    localStorage.setItem('sb_token', authToken);
+    currentUser = data.user;
+    closeModal('company-auth-modal');
+    alert(`Company Account Registered Successfully! Your Company ID is: ${data.company.companyId}`);
+    switchPortalRole('company');
+    showAppWorkspace();
+  } catch (err) {
+    alert(err.message || 'Company Registration Failed.');
+  }
+}
+
+// COLLEGE AUTH HANDLERS
+function openCollegeAuthModal(tab = 'login') {
+  openModal('college-auth-modal');
+  switchCollegeAuthTab(tab);
+}
+
+function switchCollegeAuthTab(tab) {
+  const loginForm = document.getElementById('college-login-form');
+  const regForm = document.getElementById('college-register-form');
+  const title = document.getElementById('college-auth-title');
+
+  if (tab === 'login') {
+    title.innerHTML = '<i class="fa-solid fa-university text-purple"></i> University Admin Login';
+    loginForm.classList.remove('hidden');
+    regForm.classList.add('hidden');
+  } else {
+    title.innerHTML = '<i class="fa-solid fa-university text-purple"></i> Register University Admin';
+    regForm.classList.remove('hidden');
+    loginForm.classList.add('hidden');
+  }
+}
+
+async function handleCollegeLoginSubmit(e) {
+  e.preventDefault();
+  const identity = document.getElementById('col-login-user').value.trim();
+  const password = document.getElementById('col-login-pass').value.trim();
+
+  try {
+    const data = await apiFetch('/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({ identity, password, role: 'college' })
+    });
+    authToken = data.token;
+    localStorage.setItem('sb_token', authToken);
+    currentUser = data.user;
+    closeModal('college-auth-modal');
+    switchPortalRole('college');
+    showAppWorkspace();
+  } catch (err) {
+    alert(err.message || 'College Admin Login Failed.');
+  }
+}
+
+async function handleCollegeRegisterSubmit(e) {
+  e.preventDefault();
+  const collegeName = document.getElementById('col-reg-name').value.trim();
+  const adminName = document.getElementById('col-reg-admin').value.trim();
+  const email = document.getElementById('col-reg-email').value.trim();
+  const password = document.getElementById('col-reg-pass').value.trim();
+
+  try {
+    const data = await apiFetch('/auth/register', {
+      method: 'POST',
+      body: JSON.stringify({ collegeName, adminName, email, password, role: 'college' })
+    });
+    authToken = data.token;
+    localStorage.setItem('sb_token', authToken);
+    currentUser = data.user;
+    closeModal('college-auth-modal');
+    alert('University Admin Registered Successfully!');
+    switchPortalRole('college');
+    showAppWorkspace();
+  } catch (err) {
+    alert(err.message || 'University Registration Failed.');
+  }
+}
+
+// STUDENT LOADERS
 async function loadDashboardHome() {
   try {
     const data = await apiFetch('/student/profile');
@@ -131,7 +278,6 @@ async function loadDashboardHome() {
         <div class="badge-saas badge-purple mb-2">${j.match_percentage}% MATCH</div>
         <h4 style="font-weight:700;">${j.title}</h4>
         <div style="font-size:0.8rem; color:var(--text-blue); font-weight:700;" class="mb-2">${j.company_name}</div>
-        <p style="font-size:0.8rem; color:var(--text-muted);" class="mb-3">${j.location} • ${j.salary_stipend}</p>
         <button class="btn-saas btn-primary w-full" onclick="navigateTo('opportunities')">View & Apply</button>
       </div>
     `).join('');
@@ -147,106 +293,66 @@ async function loadProfileView() {
     document.getElementById('prof-college').value = p.college || '';
   } catch (e) {}
 }
-
-async function handleSaveProfile(e) {
-  e.preventDefault();
-  alert('Profile updated successfully!');
-}
-
+async function handleSaveProfile(e) { e.preventDefault(); alert('Profile updated!'); }
 async function loadAcademicsView() {
   try {
     const data = await apiFetch('/student/academics');
     const tbody = document.getElementById('semester-table-body');
-    tbody.innerHTML = (data.records || []).map(r => `
-      <tr><td style="font-weight:700;">${r.semester}</td><td style="color:var(--text-blue); font-weight:800;">${r.gpa.toFixed(2)}</td><td><span class="badge-saas badge-emerald">${r.status}</span></td></tr>
-    `).join('');
+    tbody.innerHTML = (data.records || []).map(r => `<tr><td style="font-weight:700;">${r.semester}</td><td>${r.gpa.toFixed(2)}</td><td><span class="badge-saas badge-emerald">${r.status}</span></td></tr>`).join('');
   } catch (e) {}
 }
-
 async function loadSkillsView() {
   try {
     const data = await apiFetch('/student/skills');
-    const container = document.getElementById('technical-skills-list');
-    container.innerHTML = (data.technical || []).map(s => `
-      <div class="flex-between"><span>${s.skill_name}</span> <span class="badge-saas badge-purple">${s.proficiency}</span></div>
-    `).join('');
+    document.getElementById('technical-skills-list').innerHTML = (data.technical || []).map(s => `<div class="flex-between"><span>${s.skill_name}</span> <span class="badge-saas badge-purple">${s.proficiency}</span></div>`).join('');
   } catch (e) {}
 }
-
 async function loadAssessmentsView() {
   try {
     const data = await apiFetch('/student/assessments');
     document.getElementById('assess-overall-score').textContent = `${data.overall_score || 82} / 100`;
-    const container = document.getElementById('assessments-list-container');
-    container.innerHTML = (data.tests || []).map(t => `
-      <div class="saas-card flex-between mb-3"><div><h4 style="font-weight:700;">${t.name}</h4></div><div style="font-weight:800; color:var(--text-emerald);">${t.score}/${t.total}</div></div>
-    `).join('');
+    document.getElementById('assessments-list-container').innerHTML = (data.tests || []).map(t => `<div class="saas-card flex-between mb-3"><div><h4 style="font-weight:700;">${t.name}</h4></div><div style="font-weight:800; color:var(--text-emerald);">${t.score}/${t.total}</div></div>`).join('');
   } catch (e) {}
 }
-
 async function loadPortfolioView() {
   try {
     const data = await apiFetch('/student/portfolio');
-    const container = document.getElementById('portfolio-tab-content');
-    container.innerHTML = (data.projects || []).map(p => `
-      <div class="saas-card mb-3"><h4 style="font-weight:700;">${p.title}</h4><p style="font-size:0.85rem; color:var(--text-muted);">${p.description}</p></div>
-    `).join('');
+    document.getElementById('portfolio-tab-content').innerHTML = (data.projects || []).map(p => `<div class="saas-card mb-3"><h4 style="font-weight:700;">${p.title}</h4><p style="font-size:0.85rem; color:var(--text-muted);">${p.description}</p></div>`).join('');
   } catch (e) {}
 }
-
 async function loadAISkillAnalyzerView() {
   try {
     const data = await apiFetch('/ai/company/1');
     document.getElementById('ai-match-pct').textContent = `${data.matchPercentage}% Match`;
   } catch (e) {}
 }
-
 async function loadOpportunitiesView() {
   try {
     const jobs = await apiFetch('/opportunities');
-    const container = document.getElementById('opportunities-list-container');
-    container.innerHTML = jobs.map(j => `
-      <div class="saas-card mb-3">
-        <h4 style="font-weight:700;">${j.title}</h4>
-        <div style="color:var(--text-blue); font-weight:700;" class="mb-2">${j.company_name}</div>
-        <button class="btn-saas btn-primary" onclick="handleApplyJob(${j.id})">Apply Position</button>
-      </div>
-    `).join('');
+    document.getElementById('opportunities-list-container').innerHTML = jobs.map(j => `<div class="saas-card mb-3"><h4 style="font-weight:700;">${j.title}</h4><div style="color:var(--text-blue); font-weight:700;" class="mb-2">${j.company_name}</div><button class="btn-saas btn-primary" onclick="handleApplyJob(${j.id})">Apply Position</button></div>`).join('');
   } catch (e) {}
 }
-
 async function handleApplyJob(jobId) {
   try {
     await apiFetch('/student/apply', { method: 'POST', body: JSON.stringify({ jobId }) });
-    alert('Application submitted successfully!');
+    alert('Application submitted!');
     navigateTo('applications');
   } catch (err) { alert(err.message); }
 }
-
 async function loadApplicationsView() {
   try {
     const apps = await apiFetch('/student/applications');
-    const container = document.getElementById('applications-list-container');
-    container.innerHTML = apps.map(a => `
-      <div class="saas-card mb-3 flex-between">
-        <div><h4 style="font-weight:700;">${a.job_title}</h4><div style="font-size:0.85rem; color:var(--text-blue);">${a.company_name}</div></div>
-        <span class="badge-saas badge-emerald">${a.status}</span>
-      </div>
-    `).join('');
+    document.getElementById('applications-list-container').innerHTML = apps.map(a => `<div class="saas-card mb-3 flex-between"><div><h4 style="font-weight:700;">${a.job_title}</h4><div style="font-size:0.85rem; color:var(--text-blue);">${a.company_name}</div></div><span class="badge-saas badge-emerald">${a.status}</span></div>`).join('');
   } catch (e) {}
 }
-
 async function loadNotificationsView() {
   try {
     const list = await apiFetch('/student/notifications');
-    const container = document.getElementById('notifications-list-container');
-    container.innerHTML = list.map(n => `
-      <div class="saas-card mb-3"><h4 style="font-weight:700;">${n.title}</h4><p style="font-size:0.85rem; color:var(--text-muted);">${n.message}</p></div>
-    `).join('');
+    document.getElementById('notifications-list-container').innerHTML = list.map(n => `<div class="saas-card mb-3"><h4 style="font-weight:700;">${n.title}</h4><p style="font-size:0.85rem; color:var(--text-muted);">${n.message}</p></div>`).join('');
   } catch (e) {}
 }
 
-// COMPANY RECRUITER MODULE LOADERS
+// COMPANY RECRUITER LOADERS
 async function loadCompanyATSPipeline() {
   try {
     const data = await apiFetch('/company/dashboard');
@@ -265,10 +371,7 @@ async function loadCompanyATSPipeline() {
       const filtered = apps.filter(a => a.status === st);
       return `
         <div class="pipeline-stage-col">
-          <div class="pipeline-stage-header">
-            <span>${st}</span>
-            <span class="badge-saas badge-blue">${filtered.length}</span>
-          </div>
+          <div class="pipeline-stage-header"><span>${st}</span><span class="badge-saas badge-blue">${filtered.length}</span></div>
           ${filtered.map(cand => `
             <div class="candidate-kanban-card">
               <div style="font-weight:700;">${cand.candidate_name || 'Arjun Sharma'}</div>
@@ -313,18 +416,11 @@ async function handlePostJobSubmit(e) {
 async function loadTalentFinder() {
   try {
     const students = await apiFetch('/college/students');
-    const container = document.getElementById('talent-candidates-list');
-    container.innerHTML = students.map(s => `
-      <div class="saas-card">
-        <h4 style="font-weight:700;">${s.name}</h4>
-        <div style="font-size:0.8rem; color:var(--text-muted);">${s.college} • ${s.department}</div>
-        <div style="font-size:0.85rem; font-weight:800; color:var(--text-emerald);" class="mt-2">CGPA: ${s.cgpa || 8.8}</div>
-      </div>
-    `).join('');
+    document.getElementById('talent-candidates-list').innerHTML = students.map(s => `<div class="saas-card"><h4 style="font-weight:700;">${s.name}</h4><div style="font-size:0.8rem; color:var(--text-muted);">${s.college} • ${s.department}</div><div style="font-size:0.85rem; font-weight:800; color:var(--text-emerald);" class="mt-2">CGPA: ${s.cgpa || 8.8}</div></div>`).join('');
   } catch (e) {}
 }
 
-// COLLEGE ADMIN MODULE LOADERS
+// COLLEGE ADMIN LOADERS
 async function loadCollegeDashboard() {
   try {
     const data = await apiFetch('/college/dashboard');
@@ -333,27 +429,20 @@ async function loadCollegeDashboard() {
     document.getElementById('col-placement-rate').textContent = `${data.placement_rate}%`;
 
     const tbody = document.getElementById('college-dept-table');
-    tbody.innerHTML = (data.department_stats || []).map(d => `
-      <tr><td style="font-weight:700;">${d.name}</td><td>${d.total}</td><td style="color:var(--text-emerald); font-weight:800;">${d.placed}</td><td><span class="badge-saas badge-emerald">${d.percentage}%</span></td></tr>
-    `).join('');
+    tbody.innerHTML = (data.department_stats || []).map(d => `<tr><td style="font-weight:700;">${d.name}</td><td>${d.total}</td><td style="color:var(--text-emerald); font-weight:800;">${d.placed}</td><td><span class="badge-saas badge-emerald">${d.percentage}%</span></td></tr>`).join('');
   } catch (e) {}
 }
 
 async function loadCollegeStudentDirectory() {
   try {
     const students = await apiFetch('/college/students');
-    const container = document.getElementById('college-students-list');
-    container.innerHTML = students.map(s => `
-      <div class="saas-card">
-        <h4 style="font-weight:700;">${s.name}</h4>
-        <div style="font-size:0.8rem; color:var(--text-muted);">${s.student_id} • ${s.department}</div>
-      </div>
-    `).join('');
+    document.getElementById('college-students-list').innerHTML = students.map(s => `<div class="saas-card"><h4 style="font-weight:700;">${s.name}</h4><div style="font-size:0.8rem; color:var(--text-muted);">${s.student_id} • ${s.department}</div></div>`).join('');
   } catch (e) {}
 }
 
 // UTILS
-function openAuthModal() { navigateToRoleHome(); }
+function openModal(id) { const el = document.getElementById(id); if (el) el.classList.remove('hidden'); }
+function closeModal(id) { const el = document.getElementById(id); if (el) el.classList.add('hidden'); }
 function openLogoutModal() { handleLogout(); }
 function handleLogout() { authToken = null; currentUser = null; showGuestLanding(); }
 function closeMobileDrawer() { const sidebar = document.getElementById('app-sidebar'); if (sidebar) sidebar.classList.remove('mobile-open'); }

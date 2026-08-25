@@ -43,8 +43,8 @@
 
       <div class="flex-align gap-4">
         <div id="guest-nav-controls" class="flex-align gap-2">
-          <button class="btn-saas btn-outline" onclick="openAuthModal('login')">Sign In</button>
-          <button class="btn-saas btn-primary" onclick="openAuthModal('register')">Register Account</button>
+          <button class="btn-saas btn-outline" onclick="openStudentAuthModal('login')">Sign In</button>
+          <button class="btn-saas btn-primary" onclick="openStudentAuthModal('register')">Register Account</button>
         </div>
 
         <div id="user-nav-controls" class="flex-align gap-3 hidden">
@@ -181,12 +181,9 @@
           <div class="stat-card"><div><div style="font-size:0.75rem; font-weight:700; color:var(--text-muted);">SHORTLISTED</div><div style="font-size:1.4rem; font-weight:800;" id="comp-shortlisted">1</div></div></div>
         </div>
 
-        <!-- 8-STAGE ATS KANBAN PIPELINE -->
         <div class="saas-card mb-6">
           <h3 style="font-weight:700;" class="mb-4">8-Stage Isolated ATS Candidate Pipeline</h3>
-          <div class="pipeline-container-flex" id="ats-kanban-board">
-            <!-- Dynamically populated 8 stages -->
-          </div>
+          <div class="pipeline-container-flex" id="ats-kanban-board"></div>
         </div>
       </section>
 
@@ -240,6 +237,106 @@
       </section>
 
     </main>
+  </div>
+
+  <!-- ENFORCED COMPANY AUTHENTICATION MODAL -->
+  <div id="company-auth-modal" class="modal-backdrop hidden">
+    <div class="modal-content" style="max-width: 460px; padding: 2rem;">
+      <div class="flex-between mb-4">
+        <h3 id="comp-auth-title" style="font-weight: 800;"><i class="fa-solid fa-building text-blue"></i> Company Recruiter Login</h3>
+        <button class="btn-saas btn-outline" style="padding: 0.3rem 0.6rem;" onclick="closeModal('company-auth-modal')"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+
+      <!-- COMPANY LOGIN FORM -->
+      <form id="company-login-form" onsubmit="handleCompanyLoginSubmit(event)">
+        <div class="mb-3">
+          <label class="block text-xs font-bold mb-1">Company Name * (REQUIRED)</label>
+          <input type="text" id="comp-login-name" class="saas-input" value="TechCorp Solutions" placeholder="e.g. TechCorp Solutions or CMP-10001" required />
+        </div>
+        <div class="mb-3">
+          <label class="block text-xs font-bold mb-1">Recruiter Username / Email *</label>
+          <input type="text" id="comp-login-user" class="saas-input" value="recruiter@techcorp.com" required />
+        </div>
+        <div class="mb-4">
+          <label class="block text-xs font-bold mb-1">Password *</label>
+          <input type="password" id="comp-login-pass" class="saas-input" value="Company@123" required />
+        </div>
+        <button type="submit" class="btn-saas btn-primary w-full mb-3" style="padding:0.75rem;">Access Recruiter ATS Workspace</button>
+        <p class="text-xs text-center" style="color:var(--text-muted);">Don't have a corporate account? <a href="#" onclick="switchCompanyAuthTab('register')" style="color:var(--text-blue); font-weight:700;">Register Company Here</a></p>
+      </form>
+
+      <!-- COMPANY REGISTER FORM -->
+      <form id="company-register-form" class="hidden" onsubmit="handleCompanyRegisterSubmit(event)">
+        <div class="mb-2">
+          <label class="block text-xs font-bold mb-1">Company Name *</label>
+          <input type="text" id="comp-reg-name" class="saas-input" placeholder="e.g. InnovateTech Solutions" required />
+        </div>
+        <div class="mb-2">
+          <label class="block text-xs font-bold mb-1">Manager / Recruiter Name *</label>
+          <input type="text" id="comp-reg-mgr" class="saas-input" placeholder="e.g. Vikram Malhotra" required />
+        </div>
+        <div class="mb-2">
+          <label class="block text-xs font-bold mb-1">Company Recruiter Email *</label>
+          <input type="email" id="comp-reg-email" class="saas-input" placeholder="recruiter@innovatetech.com" required />
+        </div>
+        <div class="mb-3">
+          <label class="block text-xs font-bold mb-1">Password *</label>
+          <input type="password" id="comp-reg-pass" class="saas-input" placeholder="••••••••" required />
+        </div>
+        <button type="submit" class="btn-saas btn-primary w-full mb-3" style="padding:0.75rem;">Register & Auto-Generate Company ID</button>
+        <p class="text-xs text-center" style="color:var(--text-muted);">Already registered? <a href="#" onclick="switchCompanyAuthTab('login')" style="color:var(--text-blue); font-weight:700;">Sign In</a></p>
+      </form>
+    </div>
+  </div>
+
+  <!-- ENFORCED COLLEGE ADMIN AUTHENTICATION MODAL -->
+  <div id="college-auth-modal" class="modal-backdrop hidden">
+    <div class="modal-content" style="max-width: 460px; padding: 2rem;">
+      <div class="flex-between mb-4">
+        <h3 id="college-auth-title" style="font-weight: 800;"><i class="fa-solid fa-university text-purple"></i> University Admin Login</h3>
+        <button class="btn-saas btn-outline" style="padding: 0.3rem 0.6rem;" onclick="closeModal('college-auth-modal')"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+
+      <!-- COLLEGE LOGIN FORM -->
+      <form id="college-login-form" onsubmit="handleCollegeLoginSubmit(event)">
+        <div class="mb-3">
+          <label class="block text-xs font-bold mb-1">University / College Name *</label>
+          <input type="text" id="col-login-name" class="saas-input" value="Anna University" placeholder="e.g. Anna University" required />
+        </div>
+        <div class="mb-3">
+          <label class="block text-xs font-bold mb-1">Admin Username / Email *</label>
+          <input type="text" id="col-login-user" class="saas-input" value="anna_univ_admin" required />
+        </div>
+        <div class="mb-4">
+          <label class="block text-xs font-bold mb-1">Password *</label>
+          <input type="password" id="col-login-pass" class="saas-input" value="College@123" required />
+        </div>
+        <button type="submit" class="btn-saas btn-primary w-full mb-3" style="padding:0.75rem;">Access Placement Analytics</button>
+        <p class="text-xs text-center" style="color:var(--text-muted);">Don't have an admin account? <a href="#" onclick="switchCollegeAuthTab('register')" style="color:var(--text-purple); font-weight:700;">Register University Admin</a></p>
+      </form>
+
+      <!-- COLLEGE REGISTER FORM -->
+      <form id="college-register-form" class="hidden" onsubmit="handleCollegeRegisterSubmit(event)">
+        <div class="mb-2">
+          <label class="block text-xs font-bold mb-1">University / College Name *</label>
+          <input type="text" id="col-reg-name" class="saas-input" placeholder="e.g. IIT Madras" required />
+        </div>
+        <div class="mb-2">
+          <label class="block text-xs font-bold mb-1">Admin Officer Name *</label>
+          <input type="text" id="col-reg-admin" class="saas-input" placeholder="e.g. Prof. R. Ramanathan" required />
+        </div>
+        <div class="mb-2">
+          <label class="block text-xs font-bold mb-1">College Email *</label>
+          <input type="email" id="col-reg-email" class="saas-input" placeholder="placement@iitm.ac.in" required />
+        </div>
+        <div class="mb-3">
+          <label class="block text-xs font-bold mb-1">Password *</label>
+          <input type="password" id="col-reg-pass" class="saas-input" placeholder="••••••••" required />
+        </div>
+        <button type="submit" class="btn-saas btn-primary w-full mb-3" style="padding:0.75rem;">Register University Admin</button>
+        <p class="text-xs text-center" style="color:var(--text-muted);">Already registered? <a href="#" onclick="switchCollegeAuthTab('login')" style="color:var(--text-purple); font-weight:700;">Sign In</a></p>
+      </form>
+    </div>
   </div>
 
   <!-- FIXED FLOATING STICKY WATERMARK BADGE FOR ALL PAGES -->
